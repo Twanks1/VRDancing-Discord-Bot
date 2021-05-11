@@ -1,9 +1,15 @@
+
+# installation requirements:
+#  pip install --upgrade google-api-python-client
+
+
 import os.path
 import datetime 
 import random
 import re
 import math
 import io
+from enum import Enum
 
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -41,6 +47,10 @@ gCtx            = None # Current discord invocation context
 def SET_CTX(ctx):
     global gCtx
     gCtx = ctx
+
+class Order(Enum):
+    Ascending  = 1
+    Descending = 2
 
 ###########################
 ######## SETTINGS #########
@@ -279,6 +289,7 @@ class DiscordUser():
         self.bootyXP = val        
         gSheet.DBSetBootyXP(self, self.bootyXP)
         await self.__CheckRank()
+        gSheet.SortByColumn(gSheet.dbIndexBootyXP+1, Order.Descending)
         return prev
 
     def SetUsername(self, name: str):
@@ -436,7 +447,7 @@ class VRDancing(discord.Client):
                 await ctx.send(msg)   
 
             @commands.command(pass_context=True)
-            async def DBSubbootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
+            async def DBSubBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
                 """Adds booty experience to an arbitrary amount of users"""
                 SET_CTX(ctx)
                 gLogger.Log(f"{ctx.author.name} subtracted {value} booty points for {DiscordUser.GetNamesOfMembersAsList(members)}")
@@ -458,6 +469,14 @@ class VRDancing(discord.Client):
                         await ctx.send(f"Deleted {user.mention} successfully from DB")
                     else:
                         await ctx.send(f"Could not delete {user.mention} from DB (User doesn't exist)")
+
+            @commands.command(pass_context=True)
+            async def DBSortByXP(self, ctx, order: str):
+                """Usage: 'DBSortByXP asc' or 'DBSortByXP des'"""
+                gSheet.SortByColumn(gSheet.dbIndexBootyXP+1, Order.Ascending if order == "asc" else Order.Descending)
+                embed = discord.Embed()
+                embed.description = f"[Database]({GSHEET_LINK})"
+                await ctx.send("```GSheet was successfully sorted.```", embed=embed)
        
             @commands.command(pass_context=True)
             async def LockXP(self, ctx):
@@ -545,7 +564,7 @@ class VRDancing(discord.Client):
                 return mod in ctx.author.roles
 
             @commands.command(pass_context=True)
-            async def GiveBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
+            async def DBAddBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
                 """@Users VALUE"""
                 SET_CTX(ctx)
                 if (gSettings.XPLocked(ctx.author)):
@@ -882,6 +901,9 @@ class GoogleSpreadSheet:
         self.dbIndexDateJoined = self.GetColumnIndex(DB_DATE_JOINED)
         self.dbIndexUserDesc   = self.GetColumnIndex(DB_DESCRIPTION)
         gLogger.Log("Initialized Goggle Spread Sheet: " + spreadSheetName)
+    
+    def SortByColumn(self, columnIndex: int, order: Order):
+        self.database.sort((columnIndex, 'asc' if order == Order.Ascending else 'des'))
 
     #################################################################       
     ###################### DATABASE READS ###########################
@@ -1046,7 +1068,7 @@ class GoogleSpreadSheet:
     def Test(self, sheetName):
         sheet = self.spreadSheet.worksheet(sheetName)
 
-        highscoreList = gSheet.GetTopMembers(10)
+        #highscoreList = gSheet.GetTopMembers(10)
 
         testUser = discord.User
         #testUser.id = 236510124070404097
