@@ -2,6 +2,8 @@ import os.path
 import datetime 
 import random
 import re
+import math
+import io
 
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -10,6 +12,8 @@ import pprint
 import discord
 from discord.ext import commands
 from discord.utils import get
+
+from PIL import Image, ImageDraw, ImageFont
 
 import logging
 
@@ -22,6 +26,9 @@ def CYAN(str):
     return "```yaml\n" + str + "```"
 def RED(str):
     return "```diff\n- " + str + "```"
+
+def Lerp(a, b, val):
+    return (val * b) + ((1 - val) * a)
 
 ###########################
 ######### GLOBALS #########
@@ -43,7 +50,7 @@ class Settings:
         self.lockXP         = True   # Whether mods can use all the XP gain commands
         self.maxXPGain      = 40     # max XP which can be added via addBootyXP command
         self.minLenUsername = 3      # min length of username
-        self.maxLenUsername = 30     # max length of username
+        self.maxLenUsername = 25     # max length of username1
         self.newUserDM      = True   # Send out new user DM
 
     def XPLocked(self, user):
@@ -80,6 +87,9 @@ RANK_FITNESS_COMMANDER = 'Fitness Commander'
 RANK_FITNESS_ADMIRAL   = 'Fitness Admiral'
 RANK_FITNESS_COMMODORE = 'Fitness Commodore'
 RANK_FITNESS_MARSHALL  = 'Fitness Marshall'
+RANK_FITNESS_MARSHALL2 = 'Fitness Marshall II'
+RANK_FITNESS_MARSHALL3 = 'Fitness Marshall III'
+RANK_FITNESS_GOD       = 'Fitness God'
 
 class Rank:
     def __init__(self, name, requiredPoints, color):
@@ -89,17 +99,20 @@ class Rank:
 
 # Define all ranks
 gRanks = [
-    Rank(RANK_FITNESS_NEWCOMER,  0,    0xffffff),
-    Rank(RANK_FITNESS_CADET,     10,   0x607d8b),
-    Rank(RANK_FITNESS_ROOKIE,    40,   0x1f8b4c),
-    Rank(RANK_FITNESS_MAJOR,     80,   0x2ecc71),
-    Rank(RANK_FITNESS_OFFICER,   150,  0x206694),
-    Rank(RANK_FITNESS_GENERAL,   250,  0x3498db),
-    Rank(RANK_FITNESS_CAPTAIN,   350,  0x71368a),
-    Rank(RANK_FITNESS_COMMANDER, 500,  0x9b59b6),
-    Rank(RANK_FITNESS_ADMIRAL,   650,  0xa84300),
-    Rank(RANK_FITNESS_COMMODORE, 800,  0xe67e22),
-    Rank(RANK_FITNESS_MARSHALL,  1000, 0xf1c40f)
+    Rank(RANK_FITNESS_NEWCOMER,  0,     "#ffffff"),
+    Rank(RANK_FITNESS_CADET,     10,    "#607d8b"),
+    Rank(RANK_FITNESS_ROOKIE,    40,    "#1f8b4c"),
+    Rank(RANK_FITNESS_MAJOR,     80,    "#2ecc71"),
+    Rank(RANK_FITNESS_OFFICER,   150,   "#206694"),
+    Rank(RANK_FITNESS_GENERAL,   250,   "#3498db"),
+    Rank(RANK_FITNESS_CAPTAIN,   350,   "#71368a"),
+    Rank(RANK_FITNESS_COMMANDER, 500,   "#9b59b6"),
+    Rank(RANK_FITNESS_ADMIRAL,   650,   "#a84300"),
+    Rank(RANK_FITNESS_COMMODORE, 800,   "#e67e22"),
+    Rank(RANK_FITNESS_MARSHALL,  1000,  "#f1c40f"),
+    Rank(RANK_FITNESS_MARSHALL2, 2000,  "#f1c40f"),
+    Rank(RANK_FITNESS_MARSHALL3, 5000,  "#f1c40f"),
+    Rank(RANK_FITNESS_GOD,       10000, "#f1c40f"),
 ]
 
 def RankIndex(rank: str):
@@ -108,7 +121,7 @@ def RankIndex(rank: str):
             return i
 
 XP_SWEATSESSION = 10
-XP_INSTRUCTOR   = 10
+XP_INSTRUCTOR   = 20
 XP_BASIC_VIDEO  = 20
 XP_YT_VIDEO     = 40
 
@@ -121,25 +134,31 @@ SWEATSESSION_CHANNEL_ID = 830885430492135424
 
 ###############################
 def OnFitnessCadet():
-    return CYAN(f"Congratulations to your new rank! You are now a {RANK_FITNESS_CADET}. Keep hitting it on the dancefloor!")
+    return CYAN(f"Congratulations to your new rank! You are now a {RANK_FITNESS_CADET}. The journey just started...")
 def OnFitnessRookie():
-    return CYAN(f"Congratulations to your new rank! You are now a {RANK_FITNESS_ROOKIE}. Keep hitting it on the dancefloor!")
+    return CYAN(f"You're getting into shape! You are now a {RANK_FITNESS_ROOKIE}.")
 def OnFitnessMajor():
-    return CYAN(f"Congratulations to your new rank! You are now a {RANK_FITNESS_MAJOR}. Keep hitting it on the dancefloor!")
+    return CYAN(f"Well done! Shake that booty!!! You are now a {RANK_FITNESS_MAJOR}.")
 def OnFitnessOfficer():
     return CYAN(f"Congratulations to your new rank! You are now a {RANK_FITNESS_OFFICER}. Keep hitting it on the dancefloor!")
 def OnFitnessGeneral():
-    return ORANGE(f"Congratulations to your new rank! You are now a {RANK_FITNESS_GENERAL}. Keep hitting it on the dancefloor!")
+    return ORANGE(f"Twerk that booty! You are now a {RANK_FITNESS_GENERAL}.")
 def OnFitnessCaptain():
-    return ORANGE(f"Congratulations to your new rank! You are now a {RANK_FITNESS_CAPTAIN}. Keep hitting it on the dancefloor!")
+    return ORANGE(f"Damn booty!! Lookin' gooooood! You are now a {RANK_FITNESS_CAPTAIN}.")
 def OnFitnessCommander():
-    return ORANGE(f"Congratulations to your new rank! You are now a {RANK_FITNESS_COMMANDER}. Keep hitting it on the dancefloor!")
+    return ORANGE(f"You are now a {RANK_FITNESS_COMMANDER}. Be careful that you're not falling for the Marshall..")
 def OnFitnessAdmiral():
-    return ORANGE(f"Congratulations to your new rank! You are now a {RANK_FITNESS_ADMIRAL}. Keep hitting it on the dancefloor!")
+    return ORANGE(f"Congratzz! You are now a {RANK_FITNESS_ADMIRAL}. You really did fall for the Marshall, didn't you?")
 def OnFitnessCommodore():
-    return ORANGE(f"Congratulations to your new rank! You are now a {RANK_FITNESS_COMMODORE}. Keep hitting it on the dancefloor!")
+    return ORANGE(f"Holy Shit! That's amazing! Your booty is made out of stone! You are now a {RANK_FITNESS_COMMODORE}.")
 def OnFitnessMarshall():
     return ORANGE(f"Damn, you did it!!! You are now a {RANK_FITNESS_MARSHALL}. The Fitness Marshall is so proud of you!")
+def OnFitnessMarshall2():
+    return ORANGE(f"Holy fucking moly... You are now a {RANK_FITNESS_MARSHALL2}.")
+def OnFitnessMarshall3():
+    return ORANGE(f"What the fucking hell? You are now a {RANK_FITNESS_MARSHALL3}.")
+def OnFitnessGod():
+    return ORANGE(f"You are literally a god amongst humans. You are now a {RANK_FITNESS_GOD}.")
 
 RankUpDM = {RANK_FITNESS_CADET     : OnFitnessCadet,
            RANK_FITNESS_ROOKIE    : OnFitnessRookie,
@@ -151,6 +170,9 @@ RankUpDM = {RANK_FITNESS_CADET     : OnFitnessCadet,
            RANK_FITNESS_ADMIRAL   : OnFitnessAdmiral,
            RANK_FITNESS_COMMODORE : OnFitnessCommodore,
            RANK_FITNESS_MARSHALL  : OnFitnessMarshall,
+           RANK_FITNESS_MARSHALL2 : OnFitnessMarshall2,
+           RANK_FITNESS_MARSHALL3 : OnFitnessMarshall3,
+           RANK_FITNESS_GOD       : OnFitnessGod
 }
 
 # Messages are part of an embed and posted in the ranks-up channel
@@ -174,6 +196,12 @@ def OnFitnessCommodoreChannel():
     return f"Holy Shit! That's amazing!\n Your booty is made out of stone!"
 def OnFitnessMarshallChannel():
     return f"Damn, you did it!!!\nNever stop dancing!"
+def OnFitnessMarshall2Channel():
+    return f"He is the chosen one!"
+def OnFitnessMarshall3Channel():
+    return f"Holy fucking moly, are you insane?"
+def OnFitnessGod():
+    return f"A god amongst humans..."
 
 RankUpChannelMsg = {
            RANK_FITNESS_CADET     : OnFitnessCadetChannel,
@@ -186,6 +214,9 @@ RankUpChannelMsg = {
            RANK_FITNESS_ADMIRAL   : OnFitnessAdmiralChannel,
            RANK_FITNESS_COMMODORE : OnFitnessCommodoreChannel,
            RANK_FITNESS_MARSHALL  : OnFitnessMarshallChannel,
+           RANK_FITNESS_MARSHALL2 : OnFitnessMarshall2Channel,
+           RANK_FITNESS_MARSHALL3 : OnFitnessMarshall3Channel,
+           RANK_FITNESS_GOD       : OnFitnessGod
 }
 
 ###########################
@@ -270,7 +301,7 @@ class Logger:
         self.logger.log(logging.INFO, msg)
 
     def Warn(self, msg):
-        self.logger.warn(msg)
+        self.logger.warning(msg)
 
 #################################################################       
 ##################### DISCORD USER ##############################
@@ -329,9 +360,21 @@ class DiscordUser():
 
         # Remove role and add new role
         oldRank = self.rank
-        await gVRdancing.RemoveRole(self.discordUser, oldRank)
+        try:
+            await gVRdancing.RemoveRole(self.discordUser, oldRank)
+        except:
+            err = f"Couldn't remove role {self.rank} from user {self.username} (Does the role exist?)"
+            gLogger.Warn(err)
+            await gCtx.send(err)
+
         self.rank = newRank
-        await gVRdancing.AddRole(self.discordUser, self.rank)        
+        
+        try:
+            await gVRdancing.AddRole(self.discordUser, self.rank)        
+        except:
+            err = f"Couldn't add role {self.rank} to user {self.username} (Does the role exist?)"
+            gLogger.Warn(err)
+            await gCtx.send(err)
 
         newRankIndex = RankIndex(newRank)
         if newRankIndex < RankIndex(oldRank):
@@ -341,15 +384,20 @@ class DiscordUser():
             # Send DM to user that his rank has changed
             await self.discordUser.send(RankUpDM[newRank]())
 
-            # Send a message into the ranks channel and mention the user!
-            embed=discord.Embed(color=gRanks[newRankIndex].color)
-            #embed.set_thumbnail(url="https://yt3.ggpht.com/ytc/AAUvwnhb-qXCQ1EzAhubjtxaJhIwhzgtc0yQTFXPpv2n=s88-c-k-c0x00ffffff-no-rj")
-            embed.set_thumbnail(url=self.discordUser.avatar_url)
-            embed.add_field(name=f"{newRank}", value=RankUpChannelMsg[newRank](), inline=False)
+            # Send the rank card to the user as DM
+            await gVRdancing.SendRankCard(self.discordUser, self.discordUser)
+
+            # Send an embed into the ranks channel and mention the user!
+            #rankColorAsInt = int(gRanks[newRankIndex].color[1:], 16)
+            #embed=discord.Embed(color=rankColorAsInt)
+            #embed.set_thumbnail(url=self.discordUser.avatar_url)
+            #embed.add_field(name=f"{newRank}", value=RankUpChannelMsg[newRank](), inline=False)
 
             channel = gVRdancing.GetChannel(RANK_UP_CHANNEL_ID)
-            await channel.send(f"{self.discordUser.mention} just achieved a new rank: {self.rank} with {self.bootyXP} XP ({gRanks[newRankIndex].requiredPoints} Needed)", embed=embed)
+            await channel.send(f"{self.discordUser.mention} just achieved a new rank: {self.rank} with {self.bootyXP} XP ({gRanks[newRankIndex].requiredPoints} Needed)")
+            await gVRdancing.SendRankCard(channel, self.discordUser)
         except:
+            gLogger.Warn("Failed to send a rank up message in the rank up channel (Wrong channel id set?)")
             pass
 
     def __NextRank(self):
@@ -641,17 +689,14 @@ class VRDancing(discord.Client):
             async def Rank(self, ctx, members: commands.Greedy[discord.Member]):
                 """Displays detailed information about a users rank"""
                 SET_CTX(ctx)
-                # Display your own rank if no user was listed
+
+                 # Display your own rank if no user was listed
                 if not members:
-                    member = await gSheet.GetMember(ctx.author)
-                    msg = f'```You have {member.bootyXP} booty points. Your rank is {member.rank}. You need {member.GetNextRankMissingXP()} more to reach the next rank of {member.GetNextRankName()}!```'
-                    await ctx.reply(msg, mention_author=True)
+                    await gVRdancing.SendRankCard(ctx, ctx.author)
 
                 # Display rank of all users
                 for user in members:
-                    member = await gSheet.GetMember(user)
-                    msg = f'```{member.username} has {member.bootyXP} booty points (Rank: {member.rank})!```'
-                    await ctx.send(msg)
+                    await gVRdancing.SendRankCard(ctx, user)
 
             @commands.command(pass_context=True)
             async def Chatmans(self, ctx):
@@ -679,7 +724,7 @@ class VRDancing(discord.Client):
                     return
                 member = await gSheet.GetMember(ctx.author)
                 member.SetUsername(name)
-                await ctx.reply(f"Username was sucessfully updated to '{name}''.", mention_author=True)
+                await ctx.reply(f"Username was changed to '{name}''. Please make sure this is your vrchat username (case sensitive!)", mention_author=True)
 
             @commands.command(pass_context=True)
             async def MyName(self, ctx):
@@ -736,6 +781,26 @@ class VRDancing(discord.Client):
                 """EASTER EGG"""
                 await ctx.send('https://cdn.discordapp.com/attachments/793977209642811393/831637815488938014/thing1.gif')
 
+
+            @commands.command(pass_context=True)
+            async def Test(self, ctx, members: commands.Greedy[discord.Member]):
+                """Displays detailed information about a users rank"""
+                SET_CTX(ctx)
+                # Display your own rank if no user was listed
+                if not members:
+                    await gVRdancing.SendRankCard(ctx, ctx.author)
+                    #msg = f'```You have {member.bootyXP} booty points. Your rank is {member.rank}. You need {member.GetNextRankMissingXP()} more to reach the next rank of {member.GetNextRankName()}!```'
+                    #await ctx.reply(msg, mention_author=True)
+
+                # Display rank of all users
+                for user in members:
+                    #card = discord.File('card.png')
+                    #await ctx.send(file=card)
+                    await gVRdancing.SendRankCard(ctx, user)
+
+                    #msg = f'```{member.username} has {member.bootyXP} booty points (Rank: {member.rank})!```'
+                    #await ctx.send(msg)
+
             #@commands.command(pass_context=True)
             #async def Test(self, ctx):
              #   """EASTER EGG"""
@@ -773,6 +838,76 @@ class VRDancing(discord.Client):
 
     def GetChannel(self, id):
         return self.guild.get_channel(id)
+
+    async def SendRankCard(self, target, user: discord.Member):
+        member = await gSheet.GetMember(user)
+
+        currentRankIndex = RankIndex(member.rank)
+        bMaxLevel = currentRankIndex == len(gRanks)-1
+
+        rankCur  = gRanks[currentRankIndex]
+        rankNext = gRanks[min(currentRankIndex + 1, len(gRanks)-1)]
+
+        username       = member.username                    
+        currentXP      = member.bootyXP
+        currentRank    = rankCur.name
+        nextRank       = rankNext.name
+        XPCurrentLevel = rankCur.requiredPoints
+        XPNextLevel    = rankNext.requiredPoints                    
+        rankColor      = rankCur.color
+        nextRankColor  = rankNext.color
+            
+        # Image
+        w, h = 1024, 256
+        img = Image.new("RGBA", (w, h), "#090A0B")
+        draw = ImageDraw.Draw(img)            
+
+        # Avatar image
+        avatar = await user.avatar_url.read()
+        avatarBytes = io.BytesIO(avatar)
+        avatarImage = Image.open(avatarBytes).convert("RGBA")
+        avatarImage.thumbnail((256, 256))
+        img.alpha_composite(avatarImage)
+
+        # Progress Bar
+        progressBarStart = (286, 180)
+        progressBarEnd = (984, 230)
+        progressBarHeight = progressBarEnd[1] - progressBarStart[1]
+        draw.rectangle([progressBarStart,progressBarEnd], fill=(72, 75, 78))
+        percentageToNextLevel = 1 if bMaxLevel else (currentXP - XPCurrentLevel)/(XPNextLevel - XPCurrentLevel)
+        if percentageToNextLevel > 0:
+            draw.rectangle([progressBarStart, (progressBarStart[0] + percentageToNextLevel*(progressBarEnd[0]-progressBarStart[0]), progressBarEnd[1])], fill=rankColor) 
+
+        textAboveProgressBarY = progressBarStart[1] - 20
+        textAboveProgressBarMargin = 25
+
+        # Rank
+        fontPathForText = "fonts/CutieShark.ttf"
+        fnt = ImageFont.truetype(fontPathForText, 60)
+        draw.text((w - 15, 5), f"{currentRank}", font=fnt, fill=rankColor, align="right", anchor="ra")
+
+        # Username
+        usernameLenMaxPercent = len(username) / gSettings.maxLenUsername
+        usernameFontSize = int(Lerp(25, 60, (1 - usernameLenMaxPercent))) # Scale font size by username len otherwise it can be too big
+        fnt = ImageFont.truetype(fontPathForText, usernameFontSize)
+        draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), f"{username}", font=fnt, fill="#FFFFFF", anchor="ls")
+
+        # XP
+        fnt = ImageFont.truetype(fontPathForText, 30)
+        bootyXPStr = f"/ {XPNextLevel} Booty XP"
+        draw.text((progressBarEnd[0] - textAboveProgressBarMargin, textAboveProgressBarY), bootyXPStr, font=fnt, fill="#6C7071", align="right", anchor="rs")
+        
+        sw, sh = draw.textsize(bootyXPStr, fnt)
+        draw.text((progressBarEnd[0] - textAboveProgressBarMargin - sw - 10, textAboveProgressBarY), f"{currentXP}", font=fnt, fill="#FFFFFF", align="right", anchor="rs")
+
+        # Next Rank
+        draw.text((progressBarEnd[0] - 10, progressBarEnd[1] - progressBarHeight/2), f"{nextRank}", font=fnt, fill=nextRankColor, align="right", anchor="rm")
+
+        arr = io.BytesIO()
+        img.save(arr, format='PNG')
+        arr.seek(0)
+        test = discord.File(arr, "card.png")
+        await target.send(file=test)
 
 #################################################################       
 ######################## GoogleSheet ############################
@@ -815,6 +950,9 @@ class GoogleSpreadSheet:
 
     # Returns a DiscordMember(), creates a new one in the DB if it doesn't exist yet
     async def GetMember(self, user: discord.user):
+        if user.bot:
+            return None
+
         try:
             result = self.database.find(str(user.id), in_column=self.dbIndexDiscordID+1)
         except:
@@ -986,6 +1124,59 @@ class GoogleSpreadSheet:
 
         print('Test done')
 
+##############################################
+def TestRankCard():
+    # creating Image object
+    w, h = 1024, 256
+    img = Image.new("RGBA", (w, h), "#090A0B")
+    draw = ImageDraw.Draw(img)                    
+
+    # Avatar image
+    avatarImage = Image.open("me.png").convert("RGBA")
+    avatarImage.thumbnail((256, 256))
+    img.alpha_composite(avatarImage)
+
+    currentRank    = "Fitness Newcomer"
+    nextRank       = "Fitness Cadet"
+    currentXP      = 170
+    XPCurrentLevel = 0
+    XPNextLevel    = 1000
+    percentageToNextLevel = (currentXP - XPCurrentLevel)/(XPNextLevel - XPCurrentLevel)
+    rankColor     = "#F27D07"
+    nextRankColor = "#44B37FAA"
+
+    # Progress Bar
+    progressBarStart = (286, 180)
+    progressBarEnd = (984, 230)
+    progressBarHeight = progressBarEnd[1] - progressBarStart[1]
+    draw.rectangle([progressBarStart,progressBarEnd], fill=(72, 75, 78))
+    if percentageToNextLevel > 0:
+        draw.rectangle([progressBarStart, (progressBarStart[0] + percentageToNextLevel*(progressBarEnd[0]-progressBarStart[0]), progressBarEnd[1])], fill=rankColor) 
+
+    textAboveProgressBarY = progressBarStart[1] - 20
+    textAboveProgressBarMargin = 25
+
+    # Rank
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
+    draw.text((w - 15, 5), f"{currentRank}", font=fnt, fill=rankColor, align="right", anchor="ra")
+
+    # Username
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
+    draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), f"Silvan", font=fnt, fill="#FFFFFF", anchor="ls")
+
+    # XP
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 30)
+    bootyXPStr = f"/ {XPNextLevel} Booty XP"
+    draw.text((progressBarEnd[0] - textAboveProgressBarMargin, textAboveProgressBarY), bootyXPStr, font=fnt, fill="#6C7071", align="right", anchor="rs")
+    
+    sw, sh = draw.textsize(bootyXPStr, fnt)
+    draw.text((progressBarEnd[0] - textAboveProgressBarMargin - sw - 5, textAboveProgressBarY), f"{currentXP}", font=fnt, fill="#FFFFFF", align="right", anchor="rs")
+
+    # Next Rank
+    draw.text((progressBarEnd[0] - 10, progressBarEnd[1] - progressBarHeight/2), f"{nextRank}", font=fnt, fill=nextRankColor, align="right", anchor="rm")
+
+    img.save("cardTest.png")
+    img.show()
 
 #################################################################       
 ############################ MAIN ###############################
@@ -993,6 +1184,8 @@ class GoogleSpreadSheet:
 def main():
     global gSheet
     global gLogger
+
+    #TestRankCard()
 
     gLogger = Logger('vrdancing', LOG_LEVEL)
 
