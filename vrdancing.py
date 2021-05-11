@@ -175,50 +175,6 @@ RankUpDM = {RANK_FITNESS_CADET     : OnFitnessCadet,
            RANK_FITNESS_GOD       : OnFitnessGod
 }
 
-# Messages are part of an embed and posted in the ranks-up channel
-def OnFitnessCadetChannel():
-    return f"The journey just started..."
-def OnFitnessRookieChannel():
-    return f"Hey! You're getting into shape!"
-def OnFitnessMajorChannel():
-    return f"Well done! Shake that booty!!!"
-def OnFitnessOfficerChannel():
-    return f"Keep hitting it!"
-def OnFitnessGeneralChannel():
-    return f"Twerk that booty!"
-def OnFitnessCaptainChannel():
-    return f"Damn booty!!\nLookin' gooooood!"
-def OnFitnessCommanderChannel():
-    return f"Be careful that you're not\nfalling for the Marshall..."
-def OnFitnessAdmiralChannel():
-    return f"You really did fall for the Marshall, didn't you?"
-def OnFitnessCommodoreChannel():
-    return f"Holy Shit! That's amazing!\n Your booty is made out of stone!"
-def OnFitnessMarshallChannel():
-    return f"Damn, you did it!!!\nNever stop dancing!"
-def OnFitnessMarshall2Channel():
-    return f"He is the chosen one!"
-def OnFitnessMarshall3Channel():
-    return f"Holy fucking moly, are you insane?"
-def OnFitnessGod():
-    return f"A god amongst humans..."
-
-RankUpChannelMsg = {
-           RANK_FITNESS_CADET     : OnFitnessCadetChannel,
-           RANK_FITNESS_ROOKIE    : OnFitnessRookieChannel,
-           RANK_FITNESS_MAJOR     : OnFitnessMajorChannel,
-           RANK_FITNESS_OFFICER   : OnFitnessOfficerChannel,
-           RANK_FITNESS_GENERAL   : OnFitnessGeneralChannel,
-           RANK_FITNESS_CAPTAIN   : OnFitnessCaptainChannel,
-           RANK_FITNESS_COMMANDER : OnFitnessCommanderChannel,
-           RANK_FITNESS_ADMIRAL   : OnFitnessAdmiralChannel,
-           RANK_FITNESS_COMMODORE : OnFitnessCommodoreChannel,
-           RANK_FITNESS_MARSHALL  : OnFitnessMarshallChannel,
-           RANK_FITNESS_MARSHALL2 : OnFitnessMarshall2Channel,
-           RANK_FITNESS_MARSHALL3 : OnFitnessMarshall3Channel,
-           RANK_FITNESS_GOD       : OnFitnessGod
-}
-
 ###########################
 ###########################
 ###########################
@@ -386,12 +342,6 @@ class DiscordUser():
 
             # Send the rank card to the user as DM
             await gVRdancing.SendRankCard(self.discordUser, self.discordUser)
-
-            # Send an embed into the ranks channel and mention the user!
-            #rankColorAsInt = int(gRanks[newRankIndex].color[1:], 16)
-            #embed=discord.Embed(color=rankColorAsInt)
-            #embed.set_thumbnail(url=self.discordUser.avatar_url)
-            #embed.add_field(name=f"{newRank}", value=RankUpChannelMsg[newRank](), inline=False)
 
             channel = gVRdancing.GetChannel(RANK_UP_CHANNEL_ID)
             await channel.send(f"{self.discordUser.mention} just achieved a new rank: {self.rank} with {self.bootyXP} XP ({gRanks[newRankIndex].requiredPoints} Needed)")
