@@ -228,7 +228,7 @@ From now on you can get booty experience by joining our {sweatsessionChannel.men
 For more information please check the {ranksChannel.mention} channel in our Discord Server.
 
 Your username in the database has been set to your discord username ({member.mention}#{member.discriminator}).
-Please change it to your vrchat username with '{CMD_PREFIX}setmyname'. You can check your username with '{CMD_PREFIX}myname'!"""
+Please change it to your vrchat username with '{CMD_PREFIX}setmyname "MY FANCY NAME"'. You can check your username with '{CMD_PREFIX}myname'!"""
 
     embed = discord.Embed()
     embed.description = f"[Database]({GSHEET_LINK})"
@@ -309,6 +309,10 @@ class DiscordUser():
         nextRank = self.__NextRank()
         return nextRank.requiredPoints - self.bootyXP
 
+    # Returns the rank number based on it's booty XP
+    def GetRankNumber(self):
+        return gSheet.GetMemberRank(self.discordUser)
+
     async def __CheckRank(self):
         # Figure out which rank we are in
         curRank = gRanks[0]
@@ -355,7 +359,7 @@ class DiscordUser():
             await gVRdancing.SendRankCard(self.discordUser, self.discordUser)
 
             channel = gVRdancing.GetChannel(RANK_UP_CHANNEL_ID)
-            await channel.send(f"{self.discordUser.mention} just achieved a new rank: {self.rank} with {self.bootyXP} XP ({gRanks[newRankIndex].requiredPoints} Needed)")
+            await channel.send(f"{self.discordUser.mention} just achieved a new rank: {self.rank} ({gRanks[newRankIndex].requiredPoints} XP was needed)")
             await gVRdancing.SendRankCard(channel, self.discordUser)
         except:
             gLogger.Warn("Failed to send a rank up message in the rank up channel (Wrong channel id set?)")
@@ -853,7 +857,12 @@ class VRDancing(discord.Client):
         # Rank
         fontPathForText = "fonts/CutieShark.ttf"
         fnt = ImageFont.truetype(fontPathForText, 60)
-        draw.text((w - 15, 5), f"{currentRank}", font=fnt, fill=rankColor, align="right", anchor="ra")
+        strRank = f"{currentRank}"
+        sw, sh = draw.textsize(strRank, fnt)
+        draw.text((w - 15, sh), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
+
+        fnt = ImageFont.truetype(fontPathForText, 40)
+        draw.text((w - 50 - sw, sh), f"Rank #{member.GetRankNumber()}", font=fnt, fill="#6C7071", align="right", anchor="rs")
 
         # Username
         usernameLenMaxPercent = len(username) / gSettings.maxLenUsername
@@ -978,6 +987,21 @@ class GoogleSpreadSheet:
             return True
         except:
             return False
+
+    # Returns the rank number of a user based on it's booty xp
+    def GetMemberRank(self, user: discord.user):
+        # Get column with booty XP and figure out best N members
+        colXP = self.database.col_values(self.dbIndexBootyXP+1)
+        valsXP = list(map(int, colXP[1:])) # Cut of header from list
+        colDiscordID = self.database.col_values(self.dbIndexDiscordID+1)
+        valsDiscordID = list(map(int, colDiscordID[1:])) # Cut of header from list
+
+        # Add the index to each entry, sort and return the index of the users discord id
+        sortedVals = []
+        for i in range(len(valsXP)):
+            sortedVals.append((valsDiscordID[i], valsXP[i]))
+        sortedVals.sort(key=lambda x: x[1], reverse=True) # Max elements at front of the list
+        return [x[0] for x in sortedVals].index(user.id) + 1
 
     def GetTopMembers(self, n: int):
         # Get column with booty XP and figure out best N members
@@ -1130,11 +1154,16 @@ def TestRankCard():
 
     # Rank
     fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
-    draw.text((w - 15, 5), f"{currentRank}", font=fnt, fill=rankColor, align="right", anchor="ra")
+    strRank = f"{currentRank}"
+    sw, sh = draw.textsize(strRank, fnt)
+    draw.text((w - 15, sh), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
+
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 40)
+    draw.text((w - 40 - sw, sh), f"Rank #1000", font=fnt, fill="#6C7071", align="right", anchor="rs")
 
     # Username
     fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
-    draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), f"Silvan", font=fnt, fill="#FFFFFF", anchor="ls")
+    draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), f"MiaMeoὣ", font=fnt, fill="#FFFFFF", anchor="ls")
 
     # XP
     fnt = ImageFont.truetype("fonts/CutieShark.ttf", 30)
@@ -1157,7 +1186,7 @@ def main():
     global gSheet
     global gLogger
 
-    #TestRankCard()
+    TestRankCard()
 
     gLogger = Logger('vrdancing', LOG_LEVEL)
 
