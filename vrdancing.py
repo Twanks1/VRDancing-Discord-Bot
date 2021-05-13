@@ -855,8 +855,9 @@ class VRDancing(discord.Client):
         textAboveProgressBarMargin = 25
 
         # Rank
-        fontPathForText = "fonts/CutieShark.ttf"
-        fnt = ImageFont.truetype(fontPathForText, 60)
+        fontPathForText  = "fonts/CutieShark.ttf"
+        fontPathForText2 = "fonts/Business-Signature.otf"
+        fnt = ImageFont.truetype(fontPathForText2, 80)
         strRank = f"{currentRank}"
         sw, sh = draw.textsize(strRank, fnt)
         draw.text((w - 15, sh), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
@@ -867,7 +868,7 @@ class VRDancing(discord.Client):
         # Username
         usernameLenMaxPercent = len(username) / gSettings.maxLenUsername
         usernameFontSize = int(Lerp(25, 60, (1 - usernameLenMaxPercent))) # Scale font size by username len otherwise it can be too big
-        fnt = ImageFont.truetype(fontPathForText, usernameFontSize)
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", usernameFontSize) # Unicode font which contains special characters like ღὣ
         draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), f"{username}", font=fnt, fill="#FFFFFF", anchor="ls")
 
         # XP
@@ -879,6 +880,7 @@ class VRDancing(discord.Client):
         draw.text((progressBarEnd[0] - textAboveProgressBarMargin - sw - 10, textAboveProgressBarY), f"{currentXP}", font=fnt, fill="#FFFFFF", align="right", anchor="rs")
 
         # Next Rank
+        fnt = ImageFont.truetype(fontPathForText2, 40)
         draw.text((progressBarEnd[0] - 10, progressBarEnd[1] - progressBarHeight/2), f"{nextRank}", font=fnt, fill=nextRankColor, align="right", anchor="rm")
 
         arr = io.BytesIO()
@@ -1132,6 +1134,7 @@ def TestRankCard():
     avatarImage.thumbnail((256, 256))
     img.alpha_composite(avatarImage)
 
+    username       = f"Chatmans"
     currentRank    = "Fitness Newcomer"
     nextRank       = "Fitness Cadet"
     currentXP      = 170
@@ -1153,7 +1156,7 @@ def TestRankCard():
     textAboveProgressBarMargin = 25
 
     # Rank
-    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
+    fnt = ImageFont.truetype("fonts/Business-Signature.otf", 70)
     strRank = f"{currentRank}"
     sw, sh = draw.textsize(strRank, fnt)
     draw.text((w - 15, sh), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
@@ -1162,8 +1165,10 @@ def TestRankCard():
     draw.text((w - 40 - sw, sh), f"Rank #1000", font=fnt, fill="#6C7071", align="right", anchor="rs")
 
     # Username
-    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
-    draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), f"MiaMeoὣ", font=fnt, fill="#FFFFFF", anchor="ls")
+    usernameLenMaxPercent = len(username) / gSettings.maxLenUsername
+    usernameFontSize = int(Lerp(25, 60, (1 - usernameLenMaxPercent))) # Scale font size by username len otherwise it can be too big
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", usernameFontSize) # Unicode font which contains special characters like ღὣ
+    draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), username, font=fnt, fill="#FFFFFF", anchor="ls")
 
     # XP
     fnt = ImageFont.truetype("fonts/CutieShark.ttf", 30)
@@ -1174,6 +1179,7 @@ def TestRankCard():
     draw.text((progressBarEnd[0] - textAboveProgressBarMargin - sw - 5, textAboveProgressBarY), f"{currentXP}", font=fnt, fill="#FFFFFF", align="right", anchor="rs")
 
     # Next Rank
+    fnt = ImageFont.truetype("fonts/Business-Signature.otf", 40)
     draw.text((progressBarEnd[0] - 10, progressBarEnd[1] - progressBarHeight/2), f"{nextRank}", font=fnt, fill=nextRankColor, align="right", anchor="rm")
 
     img.save("cardTest.png")
@@ -1186,7 +1192,7 @@ def main():
     global gSheet
     global gLogger
 
-    TestRankCard()
+    #TestRankCard()
 
     gLogger = Logger('vrdancing', LOG_LEVEL)
 
