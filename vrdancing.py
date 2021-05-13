@@ -188,16 +188,17 @@ RankUpDM = {RANK_FITNESS_CADET     : OnFitnessCadet,
 ###########################
 ###########################
 ###########################
-async def OnAddedToServer(member):
+async def OnAddedToServer(user: discord.user):
     # Post message in systems channel
-    embed=discord.Embed(color=0x009dff)
-    embed.set_thumbnail(url=f"{member.avatar_url}")
-    embed.add_field(name=f"{member.name}", value=f"You are Booty No. #{len(gVRdancing.guild.members)}", inline=True)
-    await gVRdancing.guild.system_channel.send(f"{member.mention} has joined the booty army!", embed=embed)
+    #embed=discord.Embed(color=0x009dff)
+    #embed.set_thumbnail(url=f"{user.avatar_url}")
+    #embed.add_field(name=f"{user.name}", value=f"You are Booty No. #{len(gVRdancing.guild.members)}", inline=True)
+    #await gVRdancing.guild.system_channel.send(f"{user.mention} has joined the booty army!", embed=embed)
+    await gVRdancing.SendJoinServerCard(gVRdancing.guild.system_channel, user)
     #await message.add_reaction(":fm:")
 
     # Add roles to new user
-    await gVRdancing.AddRole(member, RANK_FITNESS_NEWCOMER)
+    await gVRdancing.AddRole(user, RANK_FITNESS_NEWCOMER)
 
     # Send out private DM to user
     if (not gSettings.newUserDM):
@@ -206,19 +207,19 @@ async def OnAddedToServer(member):
     introductionChannel = gVRdancing.GetChannel(INTRODUCTION_CHANNEL_ID)
     rulesChannel = gVRdancing.GetChannel(RULES_CHANNEL_ID)
     selfRoles = gVRdancing.GetChannel(SELF_ROLES_CHANNEL_ID)
-    dm = f"""Hey {member.mention}! You finally made it! Welcome to our VRDancing Discord Server.
+    dm = f"""Hey {user.mention}! You finally made it! Welcome to our VRDancing Discord Server.
 Please read the {introductionChannel.mention} for more information about our server.
 Also read and react to the {rulesChannel.mention} to get full access.
 Free free to give you some {selfRoles.mention}, so people know a bit about you!
 
 Additionally, how about introducing yourself by setting a custom description?
 If you reply to me with '{CMD_PREFIX}setdesc "INTRODUCE YOURSELF"' other people can query it with the {CMD_PREFIX}whois command.
-Use double quotes and Shift+Enter for newlines!
+Put everything into double quotes and use Shift+Enter for newlines!
 Have fun and welcome again to the booty club!
     """
-    await member.send(dm)
+    await user.send(dm)
 
-async def OnAddedToDatabase(member):    
+async def OnAddedToDatabase(user: discord.user):    
     ranksChannel = gVRdancing.GetChannel(RANKS_CHANNEL_ID)
     sweatsessionChannel = gVRdancing.GetChannel(SWEATSESSION_CHANNEL_ID)
     dm  = f"""
@@ -227,12 +228,12 @@ You have just been added to the official VRDancing database.
 From now on you can get booty experience by joining our {sweatsessionChannel.mention} or creating some cool dance videos!
 For more information please check the {ranksChannel.mention} channel in our Discord Server.
 
-Your username in the database has been set to your discord username ({member.mention}#{member.discriminator}).
+Your username in the database has been set to your discord username ({user.mention}#{user.discriminator}).
 Please change it to your vrchat username with '{CMD_PREFIX}setmyname "MY FANCY NAME"'. You can check your username with '{CMD_PREFIX}myname'!"""
 
     embed = discord.Embed()
     embed.description = f"[Database]({GSHEET_LINK})"
-    await member.send(dm, embed=embed)
+    await user.send(dm, embed=embed)
 
 ###########################
 ##### DATABASE LAYOUT #####
@@ -403,8 +404,8 @@ class VRDancing(discord.Client):
             self.guild = self.bot.guilds[0]
 
         @bot.event
-        async def on_member_join(member):
-            await OnAddedToServer(member)               
+        async def on_member_join(user):
+            await OnAddedToServer(user)               
 
         @bot.event
         async def on_command_error(ctx, error):
@@ -761,7 +762,7 @@ class VRDancing(discord.Client):
                 SET_CTX(ctx)
                 # Display your own rank if no user was listed
                 if not members:
-                    await gVRdancing.SendRankCard(ctx, ctx.author)
+                    await gVRdancing.SendJoinServerCard(ctx, ctx.author)
                     #msg = f'```You have {member.bootyXP} booty points. Your rank is {member.rank}. You need {member.GetNextRankMissingXP()} more to reach the next rank of {member.GetNextRankName()}!```'
                     #await ctx.reply(msg, mention_author=True)
 
@@ -857,19 +858,20 @@ class VRDancing(discord.Client):
         # Rank
         fontPathForText  = "fonts/CutieShark.ttf"
         fontPathForText2 = "fonts/Business-Signature.otf"
-        fnt = ImageFont.truetype(fontPathForText2, 80)
+        fnt = ImageFont.truetype(fontPathForText2, 90)
         strRank = f"{currentRank}"
         sw, sh = draw.textsize(strRank, fnt)
-        draw.text((w - 15, sh), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
+        rankTextY = sh - 20
+        draw.text((w - 20, rankTextY), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
 
         fnt = ImageFont.truetype(fontPathForText, 40)
-        draw.text((w - 50 - sw, sh), f"Rank #{member.GetRankNumber()}", font=fnt, fill="#6C7071", align="right", anchor="rs")
+        draw.text((w - 50 - sw, rankTextY), f"Rank #{member.GetRankNumber()}", font=fnt, fill="#6C7071", align="right", anchor="rs")
 
         # Username
         usernameLenMaxPercent = len(username) / gSettings.maxLenUsername
         usernameFontSize = int(Lerp(25, 60, (1 - usernameLenMaxPercent))) # Scale font size by username len otherwise it can be too big
         fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", usernameFontSize) # Unicode font which contains special characters like ღὣ
-        draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), f"{username}", font=fnt, fill="#FFFFFF", anchor="ls")
+        draw.text((progressBarStart[0] + textAboveProgressBarMargin, textAboveProgressBarY), f"{username}", font=fnt, fill=rankColor, anchor="ls")
 
         # XP
         fnt = ImageFont.truetype(fontPathForText, 30)
@@ -882,6 +884,51 @@ class VRDancing(discord.Client):
         # Next Rank
         fnt = ImageFont.truetype(fontPathForText2, 40)
         draw.text((progressBarEnd[0] - 10, progressBarEnd[1] - progressBarHeight/2), f"{nextRank}", font=fnt, fill=nextRankColor, align="right", anchor="rm")
+
+        arr = io.BytesIO()
+        img.save(arr, format='PNG')
+        arr.seek(0)
+        test = discord.File(arr, "card.png")
+        await target.send(file=test)
+
+    ##############################################
+    async def SendJoinServerCard(self, target, user: discord.Member):
+        # creating Image object
+        w, h = 1024, 256
+        img = Image.new("RGBA", (w, h), "#090A0B")
+        draw = ImageDraw.Draw(img)                    
+
+        # Avatar image
+        avatar = await user.avatar_url.read()
+        avatarBytes = io.BytesIO(avatar)
+        avatarImage = Image.open(avatarBytes).convert("RGBA")
+        avatarImage.thumbnail((256, 256))
+        img.alpha_composite(avatarImage)
+
+        username = user.name
+        discriminator = f"#{user.discriminator}"
+
+        x, y = 350, 128
+
+        # Username
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 80)
+        draw.text((x, y), username, font=fnt, fill="#D0AA2F", align="right", anchor="ls")
+
+        sw, sh = draw.textsize(username, fnt)
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", 40) # Unicode font which contains special characters like ღὣ
+        draw.text((x + sw, y), discriminator, font=fnt, fill="#6C7071", anchor="ls")
+
+        # Has joined the server text
+        textY = y + 45
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 30)
+        strJoined = f"has joined the Server. You are booty "
+        draw.text((x, textY), strJoined, font=fnt, fill="#2FD0AA", anchor="ls")
+
+        # Nth booty member
+        sw, sh = draw.textsize(strJoined, fnt)
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
+        strJoined = f"#{len(gVRdancing.guild.members)}"
+        draw.text((x + sw, textY), strJoined, font=fnt, fill="#AA2FD0", anchor="ls")
 
         arr = io.BytesIO()
         img.save(arr, format='PNG')
@@ -1185,6 +1232,42 @@ def TestRankCard():
     img.save("cardTest.png")
     img.show()
 
+
+##############################################
+def TestDescCard():
+    # creating Image object
+    w, h = 1024, 256
+    img = Image.new("RGBA", (w, h), "#090A0B")
+    draw = ImageDraw.Draw(img)                    
+
+    # Avatar image
+    avatarImage = Image.open("me.png").convert("RGBA")
+    avatarImage.thumbnail((256, 256))
+    img.alpha_composite(avatarImage)
+
+    username = f"Silvan"
+    number = f"#6666"
+
+    x, y = 280, 128
+
+    # Username
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
+    draw.text((x, y), username, font=fnt, fill="#D0AA2F", align="right", anchor="ls")
+    sw, sh = draw.textsize(username, fnt)
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", 40) # Unicode font which contains special characters like ღὣ
+    draw.text((x + sw, y), number, font=fnt, fill="#6C7071", anchor="ls")
+
+    # Joined the server date
+
+    # Description
+    textY = y + 45
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 30)
+    strDesc = f"Hey, my name is Silvan"
+    draw.text((x, textY), strDesc, font=fnt, fill="#2FD0AA", anchor="ls")
+
+    img.save("cardTest.png")
+    img.show()
+
 #################################################################       
 ############################ MAIN ###############################
 #################################################################
@@ -1193,6 +1276,7 @@ def main():
     global gLogger
 
     #TestRankCard()
+    TestDescCard()
 
     gLogger = Logger('vrdancing', LOG_LEVEL)
 
