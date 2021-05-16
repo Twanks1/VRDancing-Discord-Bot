@@ -62,6 +62,8 @@ class Settings:
         self.minLenUsername = 3      # min length of username
         self.maxLenUsername = 25     # max length of username1
         self.newUserDM      = True   # Send out new user DM
+        self.minLenDesc     = 4      # Minimum amount of characters for the user desc
+        self.maxLenDesc     = 2000   # Maximun amount of characters for the user desc (discord limit)
 
     def XPLocked(self, user):
         return self.lockXP and not user.guild_permissions.administrator
@@ -566,7 +568,8 @@ class VRDancing(discord.Client):
 
             async def cog_check(self, ctx):
                 mod = get(ctx.guild.roles, name=ROLE_MODERATOR)
-                return mod in ctx.author.roles
+                admin = get(ctx.guild.roles, name=ROLE_ADMIN)
+                return mod in ctx.author.roles or admin in ctx.author.roles
 
             @commands.command(pass_context=True)
             async def DBAddBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
@@ -729,6 +732,10 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def SetDesc(self, ctx, desc: str):
                 """Introduce yourself by setting a custom description which you can query with the 'whois' command! The limit is 2000 characters."""
+                if len(desc) < gSettings.minLenDesc:
+                    await ctx.reply(f"Description too short. Character amount must lie between {gSettings.minLenDesc} and {gSettings.maxLenDesc}!")
+                    return;
+
                 SET_CTX(ctx)
                 member = await gSheet.GetMember(ctx.author)
                 member.SetDescription(desc)
@@ -748,7 +755,7 @@ class VRDancing(discord.Client):
 
             @WhoIs.error
             async def whois_error(self, ctx, error):
-                await ctx.send(f"```Member hasn't been added to the database yet...```")
+                await ctx.send(f"```Member doesn't exist in the database...```")
 
             @commands.command(pass_context=True)
             async def FM(self, ctx):
@@ -1102,7 +1109,7 @@ class GoogleSpreadSheet:
         row[self.dbIndexID].value         = str(newID)
         row[self.dbIndexDiscordID].value  = str(user.id)
         row[self.dbIndexUserName].value   = name
-        row[self.dbIndexBootyXP].value    = '0'
+        row[self.dbIndexBootyXP].value    = 0
         row[self.dbIndexRank].value       = RANK_FITNESS_NEWCOMER
         row[self.dbIndexDateJoined].value = datetime.datetime.now().strftime("%d.%m.%Y")
         row[self.dbIndexUserDesc].value   = f"Your awesome custom description. (Change it with '{CMD_PREFIX}setdesc')"
