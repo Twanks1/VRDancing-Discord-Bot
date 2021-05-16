@@ -359,11 +359,12 @@ class DiscordUser():
             await self.discordUser.send(RankUpDM[newRank]())
 
             # Send the rank card to the user as DM
-            await gVRdancing.SendRankCard(self.discordUser, self.discordUser)
+            card = await gVRdancing.GenerateRankCard(self.discordUser)
+            await self.discordUser.send(file=card)
 
-            channel = gVRdancing.GetChannel(RANK_UP_CHANNEL_ID)
-            await channel.send(f"{self.discordUser.mention} just achieved a new rank: {self.rank} ({gRanks[newRankIndex].requiredPoints} XP was needed)")
-            await gVRdancing.SendRankCard(channel, self.discordUser)
+            channel = gVRdancing.GetChannel(RANK_UP_CHANNEL_ID)            
+            card = await gVRdancing.GenerateRankCard(self.discordUser)
+            await channel.send(f"{self.discordUser.mention} just achieved a new rank: {self.rank} ({gRanks[newRankIndex].requiredPoints} XP was needed)", file=card)
         except:
             gLogger.Warn("Failed to send a rank up message in the rank up channel (Wrong channel id set?)")
             pass
@@ -669,11 +670,13 @@ class VRDancing(discord.Client):
 
                  # Display your own rank if no user was listed
                 if not members:
-                    await gVRdancing.SendRankCard(ctx, ctx.author)
+                    card = await gVRdancing.GenerateRankCard(ctx.author)
+                    await ctx.send(file=card)
 
                 # Display rank of all users
                 for user in members:
-                    await gVRdancing.SendRankCard(ctx, user)
+                    card = await gVRdancing.GenerateRankCard(user)
+                    await ctx.send(file=card)
 
             @commands.command(pass_context=True)
             async def Chatmans(self, ctx):
@@ -773,15 +776,6 @@ class VRDancing(discord.Client):
                     #msg = f'```You have {member.bootyXP} booty points. Your rank is {member.rank}. You need {member.GetNextRankMissingXP()} more to reach the next rank of {member.GetNextRankName()}!```'
                     #await ctx.reply(msg, mention_author=True)
 
-                # Display rank of all users
-                for user in members:
-                    #card = discord.File('card.png')
-                    #await ctx.send(file=card)
-                    await gVRdancing.SendRankCard(ctx, user)
-
-                    #msg = f'```{member.username} has {member.bootyXP} booty points (Rank: {member.rank})!```'
-                    #await ctx.send(msg)
-
             #@commands.command(pass_context=True)
             #async def Test(self, ctx):
              #   """EASTER EGG"""
@@ -820,7 +814,7 @@ class VRDancing(discord.Client):
     def GetChannel(self, id):
         return self.guild.get_channel(id)
 
-    async def SendRankCard(self, target, user: discord.Member):
+    async def GenerateRankCard(self, user: discord.Member):
         member = await gSheet.GetMember(user)
 
         currentRankIndex = RankIndex(member.rank)
@@ -863,12 +857,11 @@ class VRDancing(discord.Client):
         textAboveProgressBarMargin = 25
 
         # Rank
-        fontPathForText  = "fonts/CutieShark.ttf"
-        fontPathForText2 = "fonts/Business-Signature.otf"
-        fnt = ImageFont.truetype(fontPathForText2, 90)
+        fontPathForText = "fonts/CutieShark.ttf"
+        fnt = ImageFont.truetype(fontPathForText, 70)
         strRank = f"{currentRank}"
         sw, sh = draw.textsize(strRank, fnt)
-        rankTextY = sh - 20
+        rankTextY = sh
         draw.text((w - 20, rankTextY), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
 
         fnt = ImageFont.truetype(fontPathForText, 40)
@@ -889,14 +882,13 @@ class VRDancing(discord.Client):
         draw.text((progressBarEnd[0] - textAboveProgressBarMargin - sw - 10, textAboveProgressBarY), f"{currentXP}", font=fnt, fill="#FFFFFF", align="right", anchor="rs")
 
         # Next Rank
-        fnt = ImageFont.truetype(fontPathForText2, 40)
+        fnt = ImageFont.truetype(fontPathForText, 40)
         draw.text((progressBarEnd[0] - 10, progressBarEnd[1] - progressBarHeight/2), f"{nextRank}", font=fnt, fill=nextRankColor, align="right", anchor="rm")
 
         arr = io.BytesIO()
         img.save(arr, format='PNG')
         arr.seek(0)
-        test = discord.File(arr, "card.png")
-        await target.send(file=test)
+        return discord.File(arr, "card.png")
 
     ##############################################
     async def SendJoinServerCard(self, target, user: discord.Member):
@@ -1210,7 +1202,7 @@ def TestRankCard():
     textAboveProgressBarMargin = 25
 
     # Rank
-    fnt = ImageFont.truetype("fonts/Business-Signature.otf", 70)
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
     strRank = f"{currentRank}"
     sw, sh = draw.textsize(strRank, fnt)
     draw.text((w - 15, sh), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
@@ -1283,7 +1275,7 @@ def main():
     global gLogger
 
     #TestRankCard()
-    TestDescCard()
+    #TestDescCard()
 
     gLogger = Logger('vrdancing', LOG_LEVEL)
 
