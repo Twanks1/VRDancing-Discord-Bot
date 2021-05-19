@@ -1,6 +1,9 @@
 
 # installation requirements:
 #  pip install --upgrade google-api-python-client
+# TODO: ADD REST
+
+# Files: image_utils.py from https://gist.github.com/turicas/1455973 (needs to be updated slightly for python 3.0)
 
 
 import os.path
@@ -20,6 +23,7 @@ from discord.ext import commands
 from discord.utils import get
 
 from PIL import Image, ImageDraw, ImageFont
+from image_utils import ImageText
 
 import logging
 
@@ -34,6 +38,10 @@ def RED(str):
     return "```diff\n- " + str + "```"
 
 def Lerp(a, b, val):
+    if val > 1:
+        val = 1
+    if val <= 0:
+        val = 0
     return (val * b) + ((1 - val) * a)
 
 ###########################
@@ -63,7 +71,7 @@ class Settings:
         self.maxLenUsername = 25     # max length of username1
         self.newUserDM      = True   # Send out new user DM
         self.minLenDesc     = 4      # Minimum amount of characters for the user desc
-        self.maxLenDesc     = 2000   # Maximun amount of characters for the user desc (discord limit)
+        self.maxLenDesc     = 1000   # Maximun amount of characters for the user desc
 
     def XPLocked(self, user):
         return self.lockXP and not user.guild_permissions.administrator
@@ -216,7 +224,7 @@ Free free to give you some {selfRoles.mention}, so people know a bit about you!
 
 Additionally, how about introducing yourself by setting a custom description?
 If you reply to me with '{CMD_PREFIX}setdesc "INTRODUCE YOURSELF"' other people can query it with the {CMD_PREFIX}whois command.
-Put everything into double quotes and use Shift+Enter for newlines!
+Put everything into double quotes and use Shift+Enter for newlines! (Max {gSettings.maxLenDesc} characters)
 Have fun and welcome again to the booty club!
     """
     await user.send(dm)
@@ -734,7 +742,7 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def SetDesc(self, ctx, desc: str):
-                """Introduce yourself by setting a custom description which you can query with the 'whois' command! The limit is 2000 characters."""
+                """Introduce yourself by setting a custom description which you can query with the 'whois' command! Execute the command without args to see the limit."""
                 if len(desc) < gSettings.minLenDesc:
                     await ctx.reply(f"Description too short. Character amount must lie between {gSettings.minLenDesc} and {gSettings.maxLenDesc}!")
                     return;
@@ -750,11 +758,11 @@ class VRDancing(discord.Client):
                 SET_CTX(ctx)
                 if (user is None):
                     user = ctx.author
-                    member = await gSheet.GetMember(user)
-                    await ctx.reply(f"Your custom description:\n```{member.userDesc}```", mention_author=True)
-                else:
-                    member = await gSheet.GetMember(user)
-                    await ctx.reply(f"```{member.username}:\n{member.userDesc}```", mention_author=True)
+
+                card = await gVRdancing.GenerateDescCard(user)  
+                await ctx.send(file=card)
+                #member = await gSheet.GetMember(user)
+                #await ctx.send(f"```{member.username}:\n{member.userDesc}```", mention_author=True)
 
             @WhoIs.error
             async def whois_error(self, ctx, error):
@@ -765,16 +773,12 @@ class VRDancing(discord.Client):
                 """EASTER EGG"""
                 await ctx.send('https://cdn.discordapp.com/attachments/793977209642811393/831637815488938014/thing1.gif')
 
-
             @commands.command(pass_context=True)
-            async def Test(self, ctx, members: commands.Greedy[discord.Member]):
-                """Displays detailed information about a users rank"""
-                SET_CTX(ctx)
-                # Display your own rank if no user was listed
-                if not members:
-                    await gVRdancing.SendJoinServerCard(ctx, ctx.author)
-                    #msg = f'```You have {member.bootyXP} booty points. Your rank is {member.rank}. You need {member.GetNextRankMissingXP()} more to reach the next rank of {member.GetNextRankName()}!```'
-                    #await ctx.reply(msg, mention_author=True)
+            async def database(self, ctx):
+                """Link to the database"""
+                embed = discord.Embed()
+                embed.description = f"[Database]({GSHEET_LINK})"
+                await ctx.send(embed=embed)
 
             #@commands.command(pass_context=True)
             #async def Test(self, ctx):
@@ -884,6 +888,60 @@ class VRDancing(discord.Client):
         # Next Rank
         fnt = ImageFont.truetype(fontPathForText, 40)
         draw.text((progressBarEnd[0] - 10, progressBarEnd[1] - progressBarHeight/2), f"{nextRank}", font=fnt, fill=nextRankColor, align="right", anchor="rm")
+
+        arr = io.BytesIO()
+        img.save(arr, format='PNG')
+        arr.seek(0)
+        return discord.File(arr, "card.png")
+
+    async def GenerateDescCard(self, user: discord.Member):
+        member = await gSheet.GetMember(user)
+
+        # creating Image object
+        w, h = 1024, 256
+        img = ImageText((w, h), background="#090A0B")                  
+
+        # Avatar image
+        avatar = await user.avatar_url.read()
+        avatarBytes = io.BytesIO(avatar)
+        avatarImage = Image.open(avatarBytes).convert("RGBA")
+        avatarImage.thumbnail((256, 256))
+        img.alpha_composite(avatarImage)
+
+        currentRankIndex = RankIndex(member.rank)
+
+        rankCur  = gRanks[currentRankIndex]
+        rankNext = gRanks[min(currentRankIndex + 1, len(gRanks)-1)]
+
+        username    = member.username
+        currentRank = rankCur.name                  
+        rankColor   = rankCur.color
+
+        x = 280
+        usernameFont = "fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf"
+
+        # Username
+        y = 60
+        usernameLenMaxPercent = len(username) / gSettings.maxLenUsername
+        usernameFontSize = int(Lerp(30, 60, (1 - usernameLenMaxPercent))) # Scale font size by username len otherwise it can be too big
+        img.write_text(x, y, text=username, font_filename=usernameFont, font_size=usernameFontSize, color=rankColor, anchor="lb")
+
+        # Rank
+        fontRank = "fonts/CutieShark.ttf"
+        img.write_text(1024 - 10, 35, text=currentRank, font_filename=fontRank, font_size="fill", max_height=35, color=rankColor, anchor="rs")
+
+        # Joined the server date
+        dateJoined = user.joined_at.strftime("%d.%m.%Y")
+        img.write_text(1024 - 10, 55, text=f"Joined {dateJoined}", font_filename=fontRank, font_size="fill", max_height=20, color="#6C7071", anchor="rs")
+
+        # Description
+        y = y + 5
+        rightMargin = 15
+        bottomMargin = 10
+        boxWidth = w - x - rightMargin
+        boxHeight = h - y - bottomMargin    
+        descriptionFont = "fonts/FreeSans.ttf"
+        img.write_text_box_fit(x, y, text=member.userDesc, box_width=boxWidth, box_height=boxHeight, max_font_size = 30, font_filename=descriptionFont, color="#2FD0AA")
 
         arr = io.BytesIO()
         img.save(arr, format='PNG')
@@ -1104,7 +1162,7 @@ class GoogleSpreadSheet:
         row[self.dbIndexBootyXP].value    = 0
         row[self.dbIndexRank].value       = RANK_FITNESS_NEWCOMER
         row[self.dbIndexDateJoined].value = datetime.datetime.now().strftime("%d.%m.%Y")
-        row[self.dbIndexUserDesc].value   = f"Your awesome custom description. (Change it with '{CMD_PREFIX}setdesc')"
+        row[self.dbIndexUserDesc].value   = f"Your awesome custom description. (Change me with '{CMD_PREFIX}setdesc')"
 
         self.database.update_cells(row)
 
@@ -1236,8 +1294,7 @@ def TestRankCard():
 def TestDescCard():
     # creating Image object
     w, h = 1024, 256
-    img = Image.new("RGBA", (w, h), "#090A0B")
-    draw = ImageDraw.Draw(img)                    
+    img = ImageText((w, h), background="#090A0B")                  
 
     # Avatar image
     avatarImage = Image.open("me.png").convert("RGBA")
@@ -1245,26 +1302,41 @@ def TestDescCard():
     img.alpha_composite(avatarImage)
 
     username = f"Silvan"
+    username2 = f"The Demon On Welfare"
+    username3 = f"WWWWWWWWWWWWWWWWWWWWWWWW"
     number = f"#6666"
+    rank = f"Fitness Newcomer"
 
-    x, y = 280, 128
+    x = 280
+    usernameFont = "fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf"
 
     # Username
-    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
-    draw.text((x, y), username, font=fnt, fill="#D0AA2F", align="right", anchor="ls")
-    sw, sh = draw.textsize(username, fnt)
-    fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", 40) # Unicode font which contains special characters like ღὣ
-    draw.text((x + sw, y), number, font=fnt, fill="#6C7071", anchor="ls")
+    y = 60
+    usernameLenMaxPercent = len(username) / gSettings.maxLenUsername
+    usernameFontSize = int(Lerp(30, 60, (1 - usernameLenMaxPercent))) # Scale font size by username len otherwise it can be too big
+    img.write_text(x, y, text=username, font_filename=usernameFont, font_size=usernameFontSize, color="#D0AA2F", anchor="lb")
+
+    # Rank
+    fontRank = "fonts/CutieShark.ttf"
+    img.write_text(1024 - 10, 35, text=rank, font_filename=fontRank, font_size="fill", max_height=35, color="#D0AA2F", anchor="rs")
 
     # Joined the server date
+    str = datetime.datetime.now().strftime("%d.%m.%Y")
+    img.write_text(1024 - 10, 55, text=f"Joined: {str}", font_filename=fontRank, font_size="fill", max_height=20, color="#6C7071", anchor="rs")
 
     # Description
-    textY = y + 45
-    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 30)
-    strDesc = f"Hey, my name is Silvan"
-    draw.text((x, textY), strDesc, font=fnt, fill="#2FD0AA", anchor="ls")
+    strDesc = f"Hey, my name is Silvan. And this is a very long text, which needs to be multilined.\nI'm the original founder of the VRDancing discord."
+    LongTextTest = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas a tortor at mauris volutpat condimentum at sit amet nulla. Cras ut sapien vel ipsum auctor porta et at nibh. Nam sollicitudin iaculis lectus et ullamcorper. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vivamus orci est, maximus et nunc vitae, dapibus tristique mauris. Phasellus eu mattis mauris. Etiam eleifend, erat vel varius vehicula, eros odio faucibus quam, eu ullamcorper dui mi id quam. Phasellus iaculis vestibulum mauris, a volutpat sem dignissim commodo. Fusce purus orci, sollicitudin vel pharetra id, aliquet a mi. Fusce vitae varius erat. Donec sit amet augue non tortor euismod condimentum vitae ut sem. Integer ullamcorper diam sit amet dui mollis vulputate. Phasellus nunc quam, feugiat sit amet nulla eu, tempor rutrum elit. Praesent aliquet eros id lectus euismod, sed rutrum lacus scelerisque. Integer sodales nec nisi vitae hendrerit. Etiam est arcu, accumsan mattis."
 
-    img.save("cardTest.png")
+    y = y + 5
+    rightMargin = 15
+    bottomMargin = 10
+    boxWidth = w - x - rightMargin
+    boxHeight = h - y - bottomMargin    
+    descriptionFont = "fonts/FreeSans.ttf"
+    img.write_text_box_fit(x, y, text=strDesc, box_width=boxWidth, box_height=boxHeight, max_font_size = 30, font_filename=descriptionFont, color="#2FD0AA")
+
+    img.saveToFile("cardTest.png")
     img.show()
 
 #################################################################       
