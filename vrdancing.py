@@ -1,27 +1,24 @@
-
-# installation requirements:
-#  pip install --upgrade google-api-python-client
-# TODO: ADD REST
-
-# Files: image_utils.py from https://gist.github.com/turicas/1455973 (needs to be updated slightly for python 3.0)
-
-
 import os.path
 import datetime 
 import random
 import re
 import math
 import io
+import json
 from enum import Enum
 
+#  pip3 install gspread oauth2client
+#  pip3 install --upgrade google-api-python-client
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pprint
 
+#  python3 -m pip install -U discord.py (WINDOWS USE: py -3 -m pip install -U discord.py)
 import discord
 from discord.ext import commands
 from discord.utils import get
 
+#  python3 -m pip install --upgrade Pillow
 from PIL import Image, ImageDraw, ImageFont
 from image_utils import ImageText
 
@@ -82,7 +79,7 @@ gSettings = Settings()
 
 BOT_DESCRIPTION = "A wholesome bot for our VRDancing Discord Server!"
 CMD_PREFIX      = '$'
-GSHEET_FOLDER   = 'GSheet/'
+GSHEET_FOLDER   = 'gsheet/'
 LOG_LEVEL       = logging.INFO
 GSHEET_LINK     = "https://docs.google.com/spreadsheets/d/1QFHim9haIidy8sFablM4dBqUtYFuMiRtOTkBxAwDik0/edit#gid=0"
 SPLIT_CHAR      = ';'  # Split character for giving sweatsession xp to users e.g. "NAME1;NAME2;NAME3"
@@ -452,8 +449,7 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def DBSetBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
-                """Sets booty experience for users"""
-                SET_CTX(ctx)
+                """Sets booty experience for users. Usage: cmd @userN value"""
                 gLogger.Log(f"{ctx.author.name} changed booty points to {value} for {DiscordUser.GetNamesOfMembersAsList(members)}")
                 msg = ""
                 for user in members:
@@ -464,8 +460,7 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def DBSubBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
-                """Adds booty experience to an arbitrary amount of users"""
-                SET_CTX(ctx)
+                """Removes booty experience. Usage: cmd @userN value"""
                 gLogger.Log(f"{ctx.author.name} subtracted {value} booty points for {DiscordUser.GetNamesOfMembersAsList(members)}")
                 msg = ""
                 for user in members:
@@ -477,8 +472,8 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def DBDeleteUser(self, ctx, members: commands.Greedy[discord.Member]):
-                """Deletes users from the DB"""
-                SET_CTX(ctx)
+                """Deletes users from the DB. Usage: cmd @userN"""
+                gLogger.Log(f"{ctx.author.name} deletes users {DiscordUser.GetNamesOfMembersAsList(members)} in db")
                 for user in members:
                     success = gSheet.DBDeleteMember(user)
                     if success:
@@ -497,19 +492,17 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def LockXP(self, ctx):
                 """Locks the ability to change XP for Mods"""
-                SET_CTX(ctx)
                 gSettings.lockXP = True
                 await ctx.send("```XP Gain locked for Mods```")
 
             @commands.command(pass_context=True)
             async def UnlockXP(self, ctx):
                 """Unlocks the ability to change XP for Mods"""
-                SET_CTX(ctx)
                 gSettings.lockXP = False
                 await ctx.send("```XP Gain unlocked for Mods```")
 
             @commands.command(pass_context=True)
-            async def fitnessinstructor(self, ctx, newInstructor: discord.Member):
+            async def FitnessInstructor(self, ctx, newInstructor: discord.Member):
                 """Sets a new fitness instructor for the upcoming week"""
                 role = get(ctx.guild.roles, name=ROLE_FITNESS_INSTRUCTOR)
                 for user in ctx.guild.members:
@@ -534,7 +527,8 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def DMAll(self, ctx, roles: commands.Greedy[discord.Role], dm: str):
-                """Sends a DM to all members in the server. BE VERY CAREFUL ABOUT THIS."""
+                """Sends a DM to all guild-members. CAREFUL! Usage: cmd [@Roles] 'DM'"""
+                gLogger.Log(f"{ctx.author.name} broadcasted a DM to all members in the server")
                 for user in ctx.guild.members:
                     if user.bot:
                         continue # Skip sending message to bots
@@ -576,6 +570,7 @@ class VRDancing(discord.Client):
             """All commands usable by moderators"""
 
             async def cog_check(self, ctx):
+                SET_CTX(ctx)
                 mod = get(ctx.guild.roles, name=ROLE_MODERATOR)
                 admin = get(ctx.guild.roles, name=ROLE_ADMIN)
                 return mod in ctx.author.roles or admin in ctx.author.roles
@@ -583,7 +578,6 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def DBAddBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
                 """@Users VALUE"""
-                SET_CTX(ctx)
                 if (gSettings.XPLocked(ctx.author)):
                     await ctx.reply(XP_LOCK_MSG, mention_author = True)
                     return
@@ -598,7 +592,6 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def SweatsessionXP(self, ctx, str: str):
                 """Adds booty experience to an arbitrary amount of users based on a given string"""
-                SET_CTX(ctx)
                 if (gSettings.XPLocked(ctx.author)):
                     await ctx.reply(XP_LOCK_MSG, mention_author = True)
                     return
@@ -616,6 +609,8 @@ class VRDancing(discord.Client):
                     foundUsers.append(user)
                     await member.SetXP(member.bootyXP + XP_SWEATSESSION)
 
+                gLogger.Log(f"{ctx.author.name} added {XP_SWEATSESSION} booty xp to {foundUsers}")
+
                 msg = f"Added {XP_SWEATSESSION} XP to {foundUsers}."
                 if not missingUsers:
                     await ctx.send(msg)
@@ -626,8 +621,7 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def GiveSweatsessionXP(self, ctx, members: commands.Greedy[discord.Member]):
-                """Adds booty experience to an arbitrary amount of users which attended a sweatsession"""
-                SET_CTX(ctx)
+                """Adds booty experience worth of a sweatsession. Usage: cmd @user"""
                 if (gSettings.XPLocked(ctx.author)):
                     await ctx.reply(XP_LOCK_MSG, mention_author = True)
                     return
@@ -637,8 +631,7 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def GiveVideoXP(self, ctx, members: commands.Greedy[discord.Member]):
-                """Adds booty experience to someone who created a basic dance video"""
-                SET_CTX(ctx)
+                """Adds booty experience worth of a basic dance video. Usage: cmd @user"""
                 if (gSettings.XPLocked(ctx.author)):
                     await ctx.reply(XP_LOCK_MSG, mention_author = True)
                     return
@@ -648,8 +641,7 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def GiveYoutubeVideoXP(self, ctx, members: commands.Greedy[discord.Member]):
-                """Adds booty experience to someone who created a YouTube video for VRDancing"""
-                SET_CTX(ctx)
+                """Adds booty experience worth of a YouTube video for VRDancing. Usage: cmd @user"""
                 if (gSettings.XPLocked(ctx.author)):
                     await ctx.reply(XP_LOCK_MSG, mention_author = True)
                     return
@@ -671,22 +663,24 @@ class VRDancing(discord.Client):
         class User(commands.Cog):
             """All commands usable by any user"""
                 
+            async def cog_check(self, ctx):
+                SET_CTX(ctx)
+                return True
+
             @commands.command(pass_context=True)
             async def Rank(self, ctx, members: commands.Greedy[discord.Member]):
                 """Displays detailed information about a users rank"""
-                SET_CTX(ctx)
-
-                 # Display your own rank if no user was listed
+                 # Display your own rank if no argument was provided
                 if not members:
                     card = await gVRdancing.GenerateRankCard(ctx.author)
                     await ctx.send(file=card)
 
-                # Display rank of all users
+                # Display rank of all given users
                 for user in members:
                     card = await gVRdancing.GenerateRankCard(user)
                     await ctx.send(file=card)
 
-            @commands.command(pass_context=True)
+            @commands.command(pass_context=True, hidden=True)
             async def Chatmans(self, ctx):
                 """EASTER EGG"""
                 await ctx.reply('https://imgur.com/a/CMmabf6', mention_author=True)
@@ -700,7 +694,6 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def SetMyName(self, ctx, name: str):
                 """Changes your personal username in the database"""
-                SET_CTX(ctx)
                 if (len(name) < gSettings.minLenUsername):
                     await ctx.reply(f"Username too short. Name must be between {gSettings.minLenUsername} and {gSettings.maxLenUsername} letters.", mention_author=True)
                     return
@@ -723,7 +716,6 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def Highscores(self, ctx):
                 """Display's a Highscore list for the top 10 members"""
-                SET_CTX(ctx)              
                 highscoreList = gSheet.GetTopMembers(10)
 
                 longestName = 1
@@ -747,7 +739,6 @@ class VRDancing(discord.Client):
                     await ctx.reply(f"Description too short. Character amount must lie between {gSettings.minLenDesc} and {gSettings.maxLenDesc}!")
                     return;
 
-                SET_CTX(ctx)
                 member = await gSheet.GetMember(ctx.author)
                 member.SetDescription(desc)
                 await ctx.reply(f"```Description sucessfully changed. You can check by using the '{CMD_PREFIX}whois' command without any arguments!```", mention_author=True)
@@ -755,7 +746,6 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def WhoIs(self, ctx, user: discord.Member = None):
                 """Returns a custom set message from a any user. Change it with the 'setdesc' command!"""
-                SET_CTX(ctx)
                 if (user is None):
                     user = ctx.author
 
@@ -768,13 +758,13 @@ class VRDancing(discord.Client):
             async def whois_error(self, ctx, error):
                 await ctx.send(f"```Member doesn't exist in the database...```")
 
-            @commands.command(pass_context=True)
+            @commands.command(pass_context=True, hidden=True)
             async def FM(self, ctx):
                 """EASTER EGG"""
                 await ctx.send('https://cdn.discordapp.com/attachments/793977209642811393/831637815488938014/thing1.gif')
 
             @commands.command(pass_context=True)
-            async def database(self, ctx):
+            async def Database(self, ctx):
                 """Link to the database"""
                 embed = discord.Embed()
                 embed.description = f"[Database]({GSHEET_LINK})"
@@ -1339,6 +1329,23 @@ def TestDescCard():
     img.saveToFile("cardTest.png")
     img.show()
 
+##############################################
+def DumpJSON():
+    dict = {
+        "channels":
+            {
+                "rank_up" : 827617550325907456,
+                "ranks" : 827645739366481930,
+                "introduction" : 830858802277777438,
+                "self_roles" : 830858814403379200,
+                "sweatsession" : 830885430492135424
+            }
+        ,
+    }
+
+    with open('settings.json', 'w') as json_file:
+        json.dump(dict, json_file)
+
 #################################################################       
 ############################ MAIN ###############################
 #################################################################
@@ -1348,6 +1355,12 @@ def main():
 
     #TestRankCard()
     #TestDescCard()
+
+    with open('settings.json') as f:
+        data = json.load(f)
+        channels = data['channels']
+        rankUp = channels['rank_up']
+
 
     gLogger = Logger('vrdancing', LOG_LEVEL)
 
