@@ -214,8 +214,9 @@ async def OnAddedToServer(user: discord.user):
     #embed=discord.Embed(color=0x009dff)
     #embed.set_thumbnail(url=f"{user.avatar_url}")
     #embed.add_field(name=f"{user.name}", value=f"You are Booty No. #{len(gVRdancing.guild.members)}", inline=True)
-    #await gVRdancing.guild.system_channel.send(f"{user.mention} has joined the booty army!", embed=embed)
-    await gVRdancing.SendJoinServerCard(gVRdancing.guild.system_channel, user)
+    #await gVRdancing.guild.system_channel.send(f"{user.mention} has joined the booty army!", embed=embed)    
+    card = await gVRdancing.GenerateJoinServerCard(user)
+    await gVRdancing.guild.system_channel.send(f"{user.mention} has joined the booty army!", file=card)
     #await message.add_reaction(":fm:")
 
     # Add roles to new user
@@ -724,7 +725,22 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True, hidden=True)
             async def Chatmans(self, ctx):
                 """EASTER EGG"""
-                await ctx.reply('https://imgur.com/a/CMmabf6', mention_author=True)
+                await ctx.send('https://imgur.com/a/CMmabf6')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def Kanami(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://imgur.com/a/yQX0GO0')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def Cinte(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://imgur.com/a/hYdTbY6')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def MiniGreen(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://imgur.com/a/TxluDit')
 
             @commands.command(pass_context=True)
             async def Ranks(self, ctx):
@@ -881,7 +897,7 @@ class VRDancing(discord.Client):
         avatar = await user.avatar_url.read()
         avatarBytes = io.BytesIO(avatar)
         avatarImage = Image.open(avatarBytes).convert("RGBA")
-        avatarImage.thumbnail((256, 256))
+        avatarImage = avatarImage.resize((256, 256))
         img.alpha_composite(avatarImage)
 
         # Progress Bar
@@ -941,7 +957,7 @@ class VRDancing(discord.Client):
         avatar = await user.avatar_url.read()
         avatarBytes = io.BytesIO(avatar)
         avatarImage = Image.open(avatarBytes).convert("RGBA")
-        avatarImage.thumbnail((256, 256))
+        avatarImage = avatarImage.resize((256, 256))
         img.alpha_composite(avatarImage)
 
         currentRankIndex = RankIndex(member.rank)
@@ -988,7 +1004,7 @@ class VRDancing(discord.Client):
         return discord.File(arr, "card.png")
 
     ##############################################
-    async def SendJoinServerCard(self, target, user: discord.Member):
+    async def GenerateJoinServerCard(self, user: discord.Member):
         # creating Image object
         w, h = 1024, 256
         img = Image.new("RGBA", (w, h), "#090A0B")
@@ -998,7 +1014,7 @@ class VRDancing(discord.Client):
         avatar = await user.avatar_url.read()
         avatarBytes = io.BytesIO(avatar)
         avatarImage = Image.open(avatarBytes).convert("RGBA")
-        avatarImage.thumbnail((256, 256))
+        avatarImage = avatarImage.resize((256, 256))
         img.alpha_composite(avatarImage)
 
         username = user.name
@@ -1007,17 +1023,17 @@ class VRDancing(discord.Client):
         x, y = 350, 128
 
         # Username
-        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 80)
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", 80) # Unicode font which contains special characters like ღὣ
         draw.text((x, y), username, font=fnt, fill="#D0AA2F", align="right", anchor="ls")
 
         sw, sh = draw.textsize(username, fnt)
-        fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", 40) # Unicode font which contains special characters like ღὣ
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 40) # Unicode font which contains special characters like ღὣ
         draw.text((x + sw, y), discriminator, font=fnt, fill="#6C7071", anchor="ls")
 
         # Has joined the server text
         textY = y + 45
         fnt = ImageFont.truetype("fonts/CutieShark.ttf", 30)
-        strJoined = f"has joined the Server. You are booty "
+        strJoined = f"has joined the Army. You are booty "
         draw.text((x, textY), strJoined, font=fnt, fill="#2FD0AA", anchor="ls")
 
         # Nth booty member
@@ -1029,8 +1045,7 @@ class VRDancing(discord.Client):
         arr = io.BytesIO()
         img.save(arr, format='PNG')
         arr.seek(0)
-        test = discord.File(arr, "card.png")
-        await target.send(file=test)
+        return discord.File(arr, "card.png")
 
 #################################################################       
 ######################## GoogleSheet ############################
@@ -1274,7 +1289,7 @@ def TestRankCard():
 
     # Avatar image
     avatarImage = Image.open("me.png").convert("RGBA")
-    avatarImage.thumbnail((256, 256))
+    avatarImage = avatarImage.resize((256, 256))
     img.alpha_composite(avatarImage)
 
     username       = f"Chatmans"
@@ -1337,7 +1352,7 @@ def TestDescCard():
 
     # Avatar image
     avatarImage = Image.open("me.png").convert("RGBA")
-    avatarImage.thumbnail((256, 256))
+    avatarImage = avatarImage.resize((256, 256))
     img.alpha_composite(avatarImage)
 
     username = f"Silvan"
