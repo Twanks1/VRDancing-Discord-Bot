@@ -537,30 +537,57 @@ class VRDancing(discord.Client):
             async def DM(self, ctx, members: commands.Greedy[discord.Member], dm: str):
                 """Send a DM from the bot to one or multiples user"""
                 for user in members:
-                    await user.send(dm)
+                    try:
+                        await user.send(dm)
+                        await ctx.send(f"DM sent to {user.name}")
+                    except:
+                        await ctx.send("Failed to send DM to {user.name} (probably due to private settings)")
 
             @commands.command(pass_context=True)
             async def DMAll(self, ctx, roles: commands.Greedy[discord.Role], dm: str):
                 """Sends a DM to all guild-members. CAREFUL! Usage: cmd [@Roles] 'DM'"""
                 gLogger.Log(f"{ctx.author.name} broadcasted a DM to all members in the server")
+
+                roleString = ""
+                for role in roles[0:-1]:
+                    roleString += role.name + "|"  
+                roleString += roles[-1].name   
+
+                users = []
                 for user in ctx.guild.members:
                     if user.bot:
                         continue # Skip sending message to bots
 
                     if roles and not all(role in user.roles for role in roles):
                         continue # User don't have all roles
-                    
-                    await user.send(dm)
 
+                    users.append(user)
+
+                i = 0
+                numMembers = len(users)
+
+                if numMembers == 0:
+                    await ctx.send("Sorry, couldn't find anyone to send this to!")
+                    return
+
+                for user in users:
+                    i = i + 1
+                    try:
+                        await user.send(dm)
+                        await ctx.send(f"DM sent to #{i}/{numMembers}: {user.name}")
+                    except:
+                        await ctx.send(f"Failed to send DM to #{i}: {user.name} (probably due to private settings)")
+                    
                     if not roles:
                         continue # DM sending to everyone without further notice
 
                     # Let user know which roles got the message
-                    roleString = ""
-                    for role in roles[0:-1]:
-                        roleString += role.name + "|"  
-                    roleString += roles[-1].name   
-                    await user.send(CYAN(f"This message has been sent to all people with following roles: [{roleString}]"))
+                    try:
+                        await user.send(CYAN(f"This message has been sent to all people with following roles: [{roleString}]"))
+                    except:
+                        pass
+
+                await ctx.send("Done")
 
             @commands.command(pass_context=True)
             async def AddRoles(self, ctx, members: commands.Greedy[discord.Member], roles: commands.Greedy[discord.Role]):
@@ -708,6 +735,7 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def SetMyName(self, ctx, name: str):
                 """Changes your personal username in the database"""
+                gLogger.Log(f"{ctx.author.name} changed his name to {name}")
                 if (len(name) < gSettings.minLenUsername):
                     await ctx.reply(f"Username too short. Name must be between {gSettings.minLenUsername} and {gSettings.maxLenUsername} letters.", mention_author=True)
                     return
@@ -750,9 +778,13 @@ class VRDancing(discord.Client):
             async def SetDesc(self, ctx, desc: str):
                 """Introduce yourself by setting a custom description which you can query with the 'whois' command! Execute the command without args to see the limit."""
                 if len(desc) < gSettings.minLenDesc:
-                    await ctx.reply(f"Description too short. Character amount must lie between {gSettings.minLenDesc} and {gSettings.maxLenDesc}!")
+                    await ctx.reply(f"Description too short. Character amount must lie between {gSettings.minLenDesc} and {gSettings.maxLenDesc}! Also don't forget to put everything into ''!")
+                    return;
+                if len(desc) > gSettings.maxLenDesc:
+                    await ctx.reply(f"Description too long. Character amount must lie between {gSettings.minLenDesc} and {gSettings.maxLenDesc}!")
                     return;
 
+                gLogger.Log(f"{ctx.author.name} updated his description")
                 member = await gSheet.GetMember(ctx.author)
                 member.SetDescription(desc)
                 await ctx.reply(f"```Description sucessfully changed. You can check by using the '{CMD_PREFIX}whois' command without any arguments!```", mention_author=True)
