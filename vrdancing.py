@@ -61,7 +61,7 @@ class Order(Enum):
 ######## SETTINGS #########
 ###########################
 class Settings:
-    def __init__(self):
+    def __init__(self, file):
         self.lockXP         = True   # Whether mods can use all the XP gain commands
         self.maxXPGain      = 40     # max XP which can be added via addBootyXP command
         self.minLenUsername = 3      # min length of username
@@ -70,10 +70,31 @@ class Settings:
         self.minLenDesc     = 4      # Minimum amount of characters for the user desc
         self.maxLenDesc     = 1000   # Maximun amount of characters for the user desc
 
+        with open(file) as f:
+            self.file = json.load(f)
+
     def XPLocked(self, user):
         return self.lockXP and not user.guild_permissions.administrator
 
-gSettings = Settings()
+    def ChannelIDRanks(self):
+        return self.file['channels']['ranks']
+
+    def ChannelIDRanksUp(self):
+        return self.file['channels']['rank_up']
+
+    def ChannelIDIntroduction(self):
+        return self.file['channels']['introduction']
+        
+    def ChannelIDRules(self):
+        return self.file['channels']['rules']
+
+    def ChannelIDSelfRoles(self):
+        return self.file['channels']['self_roles']
+
+    def ChannelIDSweatSession(self):
+        return self.file['channels']['sweatsession']
+
+gSettings = Settings("settings.json")
 
 ###########################
 
@@ -142,13 +163,6 @@ XP_INSTRUCTOR   = 20
 XP_BASIC_VIDEO  = 20
 XP_YT_VIDEO     = 40
 
-RANK_UP_CHANNEL_ID      = 827617550325907456
-RANKS_CHANNEL_ID        = 827645739366481930
-INTRODUCTION_CHANNEL_ID = 830858802277777438
-RULES_CHANNEL_ID        = 830858785181925396
-SELF_ROLES_CHANNEL_ID   = 830858814403379200
-SWEATSESSION_CHANNEL_ID = 830885430492135424
-
 ###############################
 def OnFitnessCadet():
     return CYAN(f"Congratulations to your new rank! You are now a {RANK_FITNESS_CADET}. The journey just started...")
@@ -211,9 +225,9 @@ async def OnAddedToServer(user: discord.user):
     if (not gSettings.newUserDM):
         return
 
-    introductionChannel = gVRdancing.GetChannel(INTRODUCTION_CHANNEL_ID)
-    rulesChannel = gVRdancing.GetChannel(RULES_CHANNEL_ID)
-    selfRoles = gVRdancing.GetChannel(SELF_ROLES_CHANNEL_ID)
+    introductionChannel = gVRdancing.GetChannel(gSettings.ChannelIDIntroduction())
+    rulesChannel = gVRdancing.GetChannel(gSettings.ChannelIDRules())
+    selfRoles = gVRdancing.GetChannel(gSettings.ChannelIDSelfRoles())
     dm = f"""Hey {user.mention}! You finally made it! Welcome to our VRDancing Discord Server.
 Please read the {introductionChannel.mention} for more information about our server.
 Also read and react to the {rulesChannel.mention} to get full access.
@@ -227,8 +241,8 @@ Have fun and welcome again to the booty club!
     await user.send(dm)
 
 async def OnAddedToDatabase(user: discord.user):    
-    ranksChannel = gVRdancing.GetChannel(RANKS_CHANNEL_ID)
-    sweatsessionChannel = gVRdancing.GetChannel(SWEATSESSION_CHANNEL_ID)
+    ranksChannel = gVRdancing.GetChannel(gSettings.ChannelIDRanks())
+    sweatsessionChannel = gVRdancing.GetChannel(gSettings.ChannelIDSweatSession())
     dm  = f"""
 Hi Active Booty!
 You have just been added to the official VRDancing database.
@@ -367,7 +381,7 @@ class DiscordUser():
             card = await gVRdancing.GenerateRankCard(self.discordUser)
             await self.discordUser.send(file=card)
 
-            channel = gVRdancing.GetChannel(RANK_UP_CHANNEL_ID)            
+            channel = gVRdancing.GetChannel(gSettings.ChannelIDRanksUp())            
             card = await gVRdancing.GenerateRankCard(self.discordUser)
             await channel.send(f"{self.discordUser.mention} just achieved a new rank: {self.rank} ({gRanks[newRankIndex].requiredPoints} XP was needed)", file=card)
         except:
@@ -511,7 +525,7 @@ class VRDancing(discord.Client):
 
                 # Add new role to the new instructor
                 await gVRdancing.AddRole(newInstructor, ROLE_FITNESS_INSTRUCTOR)
-                channel = gVRdancing.GetChannel(SWEATSESSION_CHANNEL_ID)
+                channel = gVRdancing.GetChannel(gSettings.ChannelIDSweatSession())
                 await ctx.send(f"Updated {ROLE_FITNESS_INSTRUCTOR} roles. {newInstructor.mention} You can now post in {channel.mention}. You've also gained {XP_INSTRUCTOR} Booty XP!")
 
                 # Give additional XP for being an instructor
@@ -688,7 +702,7 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def Ranks(self, ctx):
                 """Links the #rank channel"""
-                channel = gVRdancing.GetChannel(RANKS_CHANNEL_ID)
+                channel = gVRdancing.GetChannel(gSettings.ChannelIDRanks())
                 await ctx.send(f"Checkout the {channel.mention} channel for more information.")
 
             @commands.command(pass_context=True)
@@ -921,8 +935,11 @@ class VRDancing(discord.Client):
         img.write_text(1024 - 10, 35, text=currentRank, font_filename=fontRank, font_size="fill", max_height=35, color=rankColor, anchor="rs")
 
         # Joined the server date
-        dateJoined = user.joined_at.strftime("%d.%m.%Y")
-        img.write_text(1024 - 10, 55, text=f"Joined {dateJoined}", font_filename=fontRank, font_size="fill", max_height=20, color="#6C7071", anchor="rs")
+        try:
+            dateJoined = user.joined_at.strftime("%d.%m.%Y")
+            img.write_text(1024 - 10, 55, text=f"Joined {dateJoined}", font_filename=fontRank, font_size="fill", max_height=20, color="#6C7071", anchor="rs")
+        except:
+            pass # Command was called in private bot dm so no join date exists
 
         # Description
         y = y + 5
@@ -1355,12 +1372,6 @@ def main():
 
     #TestRankCard()
     #TestDescCard()
-
-    with open('settings.json') as f:
-        data = json.load(f)
-        channels = data['channels']
-        rankUp = channels['rank_up']
-
 
     gLogger = Logger('vrdancing', LOG_LEVEL)
 
