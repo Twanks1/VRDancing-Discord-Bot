@@ -1038,7 +1038,7 @@ class VRDancing(discord.Client):
 
         # Nth booty member
         sw, sh = draw.textsize(strJoined, fnt)
-        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 50)
         strJoined = f"#{len(gVRdancing.guild.members)}"
         draw.text((x + sw, textY), strJoined, font=fnt, fill="#AA2FD0", anchor="ls")
 
