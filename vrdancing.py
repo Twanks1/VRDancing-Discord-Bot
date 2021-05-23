@@ -13,7 +13,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pprint
 
-#  python3 -m pip install -U discord.py (WINDOWS USE: py -3 -m pip install -U discord.py)
+#  python3 -m pip install -U discord.py
 import discord
 from discord.ext import commands
 from discord.utils import get
@@ -65,7 +65,7 @@ class Settings:
         self.lockXP         = True   # Whether mods can use all the XP gain commands
         self.maxXPGain      = 40     # max XP which can be added via addBootyXP command
         self.minLenUsername = 3      # min length of username
-        self.maxLenUsername = 25     # max length of username1
+        self.maxLenUsername = 25     # max length of username
         self.newUserDM      = True   # Send out new user DM
         self.minLenDesc     = 4      # Minimum amount of characters for the user desc
         self.maxLenDesc     = 1000   # Maximun amount of characters for the user desc
@@ -108,6 +108,9 @@ SPLIT_CHAR      = ';'  # Split character for giving sweatsession xp to users e.g
 ROLE_ADMIN      = 'Admin'
 ROLE_MODERATOR  = 'Moderator'
 ROLE_FITNESS_INSTRUCTOR = 'Fitness Instructor'
+
+ROLE_SPLIT_RANK_ROLES    = '»»      Rank Roles       ««'
+ROLE_SPLIT_SPECIAL_ROLES = '»»      Special Roles     ««'
 
 XP_LOCK_MSG     = "XP gain is currently locked. Contact any admin to ask for unlock."
 
@@ -211,16 +214,12 @@ RankUpDM = {RANK_FITNESS_CADET     : OnFitnessCadet,
 ###########################
 async def OnAddedToServer(user: discord.user):
     # Post message in systems channel
-    #embed=discord.Embed(color=0x009dff)
-    #embed.set_thumbnail(url=f"{user.avatar_url}")
-    #embed.add_field(name=f"{user.name}", value=f"You are Booty No. #{len(gVRdancing.guild.members)}", inline=True)
-    #await gVRdancing.guild.system_channel.send(f"{user.mention} has joined the booty army!", embed=embed)    
     card = await gVRdancing.GenerateJoinServerCard(user)
-    await gVRdancing.guild.system_channel.send(f"{user.mention} has joined the booty army!", file=card)
+    await gVRdancing.guild.system_channel.send(f"{user.mention}", file=card)
     #await message.add_reaction(":fm:")
 
     # Add roles to new user
-    await gVRdancing.AddRole(user, RANK_FITNESS_NEWCOMER)
+    await gVRdancing.AddRoles(user, [RANK_FITNESS_NEWCOMER, ROLE_SPLIT_RANK_ROLES, ROLE_SPLIT_SPECIAL_ROLES])
 
     # Send out private DM to user
     if (not gSettings.newUserDM):
@@ -594,8 +593,7 @@ class VRDancing(discord.Client):
             async def AddRoles(self, ctx, members: commands.Greedy[discord.Member], roles: commands.Greedy[discord.Role]):
                 """Adds roles to an arbitrary amount of users"""
                 for user in members:
-                    for role in roles:
-                        await user.add_roles(role)
+                    await user.add_roles(roles)
                 await ctx.reply(RED("Roles added"))
 
 
@@ -603,8 +601,7 @@ class VRDancing(discord.Client):
             async def RemoveRoles(self, ctx, members: commands.Greedy[discord.Member], roles: commands.Greedy[discord.Role]):
                 """Removes roles to an arbitrary amount of users"""
                 for user in members:
-                    for role in roles:
-                        await user.remove_roles(role)
+                    await user.remove_roles(roles)
                 await ctx.send(RED("Roles removed"))
 
         ####################### MOD COMMANDS ############################
@@ -711,9 +708,12 @@ class VRDancing(discord.Client):
 
             @commands.command(pass_context=True)
             async def Rank(self, ctx, members: commands.Greedy[discord.Member]):
-                """Displays detailed information about a users rank"""
+                """Shows a rank. If no argument is provided it shows your rank."""
                  # Display your own rank if no argument was provided
                 if not members:
+                    if len(ctx.view.buffer) > len("$rank"):
+                        await ctx.reply("Invalid arguments provided. Either ping a member with @ or use no argument to show your rank.", mention_author=True)
+                        return
                     card = await gVRdancing.GenerateRankCard(ctx.author)
                     await ctx.send(file=card)
 
@@ -741,6 +741,11 @@ class VRDancing(discord.Client):
             async def MiniGreen(self, ctx):
                 """EASTER EGG"""
                 await ctx.send('https://imgur.com/a/TxluDit')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def Raestar(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://tenor.com/view/banana-suck-suck-it-banana-suck-bj-gif-15346868')
 
             @commands.command(pass_context=True)
             async def Ranks(self, ctx):
@@ -859,13 +864,29 @@ class VRDancing(discord.Client):
         bot.run(token)
 
     ##################### Public Functions ##########################
-    async def RemoveRole(self, user: discord.Member, roleName: str):
-        role = get(self.guild.roles, name=roleName)
-        await user.remove_roles(role)
+    async def RemoveRole(self, user: discord.Member, roleNameOrId):
+        try:
+            role = self.GetRole(roleNameOrId)
+            await user.remove_roles(role)
+        except:
+            gLogger.Warn(f"Failed to remove role [{roleNameOrId}] to {user.name} (Role doesn't exist?)")
 
-    async def AddRole(self, user: discord.Member, roleName: str):
-        role = get(self.guild.roles, name=roleName)
-        await user.add_roles(role)
+    async def AddRole(self, user: discord.Member, roleNameOrId):
+        try:
+            role = self.GetRole(roleNameOrId)
+            await user.add_roles(role)
+        except:
+            gLogger.Warn(f"Failed to add role [{roleNameOrId}] to {user.name} (Role doesn't exist?)")
+
+    async def AddRoles(self, user: discord.Member, roles):
+        for role in roles:
+            await self.AddRole(user, role)        
+
+    def GetRole(self, roleNameOrId):
+        if isinstance(roleNameOrId, str):
+            return get(self.guild.roles, name=roleNameOrId)
+        else:
+            return get(self.guild.roles, id=roleNameOrId)
 
     def GetChannel(self, id):
         return self.guild.get_channel(id)
@@ -1032,13 +1053,13 @@ class VRDancing(discord.Client):
 
         # Has joined the server text
         textY = y + 45
-        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 30)
-        strJoined = f"has joined the Army. You are booty "
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 25)
+        strJoined = f"has joined the Booty Army. You are booty "
         draw.text((x, textY), strJoined, font=fnt, fill="#2FD0AA", anchor="ls")
 
         # Nth booty member
         sw, sh = draw.textsize(strJoined, fnt)
-        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 50)
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf", 45)
         strJoined = f"#{len(gVRdancing.guild.members)}"
         draw.text((x + sw, textY), strJoined, font=fnt, fill="#AA2FD0", anchor="ls")
 
