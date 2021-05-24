@@ -47,11 +47,6 @@ def Lerp(a, b, val):
 gSheet          = None
 gVRdancing      = None
 gLogger         = None
-gCtx            = None # Current discord invocation context
-
-def SET_CTX(ctx):
-    global gCtx
-    gCtx = ctx
 
 class Order(Enum):
     Ascending  = 1
@@ -356,18 +351,14 @@ class DiscordUser():
         try:
             await gVRdancing.RemoveRole(self.discordUser, oldRank)
         except:
-            err = f"Couldn't remove role {self.rank} from user {self.name} (Does the role exist?)"
-            gLogger.Warn(err)
-            await gCtx.send(err)
+            gLogger.Warn(f"Couldn't remove role {self.rank} from user {self.name} (Does the role exist?)")
 
         self.rank = newRank
         
         try:
             await gVRdancing.AddRole(self.discordUser, self.rank)        
         except:
-            err = f"Couldn't add role {self.rank} to user {self.name} (Does the role exist?)"
-            gLogger.Warn(err)
-            await gCtx.send(err)
+            gLogger.Warn(f"Couldn't add role {self.rank} to user {self.name} (Does the role exist?)")
 
         newRankIndex = RankIndex(newRank)
         if newRankIndex < RankIndex(oldRank):
@@ -457,7 +448,6 @@ class VRDancing(discord.Client):
             """All commands usable by an administrator"""
 
             async def cog_check(self, ctx):
-                SET_CTX(ctx)
                 admin = get(ctx.guild.roles, name=ROLE_ADMIN)
                 return admin in ctx.author.roles or ctx.author.guild_permissions.administrator
 
@@ -609,7 +599,6 @@ class VRDancing(discord.Client):
             """All commands usable by moderators"""
 
             async def cog_check(self, ctx):
-                SET_CTX(ctx)
                 mod = get(ctx.guild.roles, name=ROLE_MODERATOR)
                 admin = get(ctx.guild.roles, name=ROLE_ADMIN)
                 return mod in ctx.author.roles or admin in ctx.author.roles
@@ -704,7 +693,6 @@ class VRDancing(discord.Client):
             """All commands usable by any user"""
                 
             async def cog_check(self, ctx):
-                SET_CTX(ctx)
                 return True
 
             @commands.command(pass_context=True)
@@ -1275,24 +1263,6 @@ class GoogleSpreadSheet:
         sheet = self.spreadSheet.worksheet(sheetName)
 
         #highscoreList = gSheet.GetTopMembers(10)
-
-        testUser = discord.User
-        #testUser.id = 236510124070404097
-        testUser.id = 42
-        testUser.name = 'Test'
-        member = self.GetMember(testUser)
-        #member.SetXP(600)
-        self.DBDeleteMember(testUser)
-
-        testUser.id = 26516126
-        #testUser.name = 'Scolly'
-        self.DBCreateNewMember(testUser)
-        self.DBDeleteMember(testUser)
-
-        #member = self.GetMember(testUser)
-        #prev = member.SetXP(42)
-        #prev = member.SetXP(prev)
-
 
         #result_col = sheet.col_values(1) #See individual column
         #result_cell = sheet.cell(1, 1) # See particular cell
