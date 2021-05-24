@@ -736,6 +736,36 @@ class VRDancing(discord.Client):
                 """EASTER EGG"""
                 await ctx.send('https://media.giphy.com/media/IcCd2FhIzuIo0/giphy.gif')
 
+            @commands.command(pass_context=True, hidden=True)
+            async def Haley(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://media.giphy.com/media/mDTC6m4Osb9p4ppOoX/giphy.gif')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def Allison(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://media.giphy.com/media/MF0p6EtTvgTYprwpPE/giphy.gif')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def Scolly(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://media.giphy.com/media/EQ1X2DtTRp1aE/giphy.gif')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def Pony(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://tenor.com/3Y7h.gif')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def Ride(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://tenor.com/3Y7D.gif')
+
+            @commands.command(pass_context=True, hidden=True)
+            async def Booty(self, ctx):
+                """EASTER EGG"""
+                await ctx.send('https://tenor.com/bcoCU.gif')
+
             @commands.command(pass_context=True)
             async def Ranks(self, ctx):
                 """Links the #rank channel"""
