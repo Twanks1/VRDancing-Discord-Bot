@@ -734,7 +734,7 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True, hidden=True)
             async def Raestar(self, ctx):
                 """EASTER EGG"""
-                await ctx.send('https://tenor.com/view/banana-suck-suck-it-banana-suck-bj-gif-15346868')
+                await ctx.send('https://media.giphy.com/media/IcCd2FhIzuIo0/giphy.gif')
 
             @commands.command(pass_context=True)
             async def Ranks(self, ctx):
@@ -1000,13 +1000,13 @@ class VRDancing(discord.Client):
             pass # Command was called in private bot dm so no join date exists
 
         # Description
-        y = y + 5
+        y = y + 8
         rightMargin = 15
         bottomMargin = 10
         boxWidth = w - x - rightMargin
         boxHeight = h - y - bottomMargin    
-        descriptionFont = "fonts/FreeSans.ttf"
-        img.write_text_box_fit(x, y, text=member.userDesc, box_width=boxWidth, box_height=boxHeight, max_font_size = 30, font_filename=descriptionFont, color="#2FD0AA")
+        descriptionFont = "fonts/seguiemj.ttf"
+        img.write_text_box_fit(x, y, text=member.userDesc, box_width=boxWidth, box_height=boxHeight, max_font_size = 30, font_filename=descriptionFont, color="#2FD0AA", embedded_color=True)
 
         arr = io.BytesIO()
         img.save(arr, format='PNG')
@@ -1306,7 +1306,7 @@ def TestRankCard():
     textAboveProgressBarMargin = 25
 
     # Rank
-    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60)
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 60, layout_engine=ImageFont.LAYOUT_RAQM)
     strRank = f"{currentRank}"
     sw, sh = draw.textsize(strRank, fnt)
     draw.text((w - 15, sh), strRank, font=fnt, fill=rankColor, align="right", anchor="rs")
@@ -1332,7 +1332,6 @@ def TestRankCard():
     fnt = ImageFont.truetype("fonts/Business-Signature.otf", 40)
     draw.text((progressBarEnd[0] - 10, progressBarEnd[1] - progressBarHeight/2), f"{nextRank}", font=fnt, fill=nextRankColor, align="right", anchor="rm")
 
-    img.save("cardTest.png")
     img.show()
 
 
@@ -1371,18 +1370,19 @@ def TestDescCard():
     img.write_text(1024 - 10, 55, text=f"Joined: {str}", font_filename=fontRank, font_size="fill", max_height=20, color="#6C7071", anchor="rs")
 
     # Description
-    strDesc = f"Hey, my name is Silvan. And this is a very long text, which needs to be multilined.\nI'm the original founder of the VRDancing discord."
-    LongTextTest = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas a tortor at mauris volutpat condimentum at sit amet nulla. Cras ut sapien vel ipsum auctor porta et at nibh. Nam sollicitudin iaculis lectus et ullamcorper. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vivamus orci est, maximus et nunc vitae, dapibus tristique mauris. Phasellus eu mattis mauris. Etiam eleifend, erat vel varius vehicula, eros odio faucibus quam, eu ullamcorper dui mi id quam. Phasellus iaculis vestibulum mauris, a volutpat sem dignissim commodo. Fusce purus orci, sollicitudin vel pharetra id, aliquet a mi. Fusce vitae varius erat. Donec sit amet augue non tortor euismod condimentum vitae ut sem. Integer ullamcorper diam sit amet dui mollis vulputate. Phasellus nunc quam, feugiat sit amet nulla eu, tempor rutrum elit. Praesent aliquet eros id lectus euismod, sed rutrum lacus scelerisque. Integer sodales nec nisi vitae hendrerit. Etiam est arcu, accumsan mattis."
-
-    y = y + 5
+    strDesc = f"Hey, my name is Silvanღὣ.💯🔞🚀👌💯 And this is a very long text, which needs to be multilined.\nI'm the original founder of the VRDancing discord."
+    LongTextTest = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas a tortor at mauris volutpat condimentum at sit amet nulla. 💯🔞🚀👌💯 Cras ut sapien vel ipsum auctor porta et at nibh. Nam sollicitudin iaculis lectus et ullamcorper. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vivamus orci est, maximus et nunc vitae, dapibus tristique mauris. Phasellus eu mattis mauris. Etiam eleifend, erat vel varius vehicula, eros odio faucibus quam, eu ullamcorper dui mi id quam. Phasellus iaculis vestibulum mauris, a volutpat sem dignissim commodo. Fusce purus orci, sollicitudin vel pharetra id, aliquet a mi. Fusce vitae varius erat. Donec sit amet augue non tortor euismod condimentum vitae ut sem. Integer ullamcorper diam sit amet dui mollis vulputate. Phasellus nunc quam, feugiat sit amet nulla eu, tempor rutrum elit. Praesent aliquet eros id lectus euismod, sed rutrum lacus scelerisque. Integer sodales nec nisi vitae hendrerit. Etiam est arcu, accumsan mattis."
+    EmojiText = "💯🔞🚀👌💯"
+    myDesc = "Hi! 💯 I'm Silvan from Germany and born in 1993. I'm the original founder of the VRDancing discord server. Everything began when i first met the Fitness Marshall in PyPy's Just Dance world. Since then i've been dancing for over a year now to him and the fun never stopped. I have improved physically as well as mentally massively and i want to bring this to other people as well. Welcome to the Cult! "
+    
+    y = y + 8
     rightMargin = 15
     bottomMargin = 10
     boxWidth = w - x - rightMargin
     boxHeight = h - y - bottomMargin    
-    descriptionFont = "fonts/FreeSans.ttf"
-    img.write_text_box_fit(x, y, text=strDesc, box_width=boxWidth, box_height=boxHeight, max_font_size = 30, font_filename=descriptionFont, color="#2FD0AA")
+    descriptionFont = "fonts/seguiemj.ttf"
+    img.write_text_box_fit(x, y, text=myDesc, box_width=boxWidth, box_height=boxHeight, max_font_size = 30, font_filename=descriptionFont, color="#2FD0AA", embedded_color=True)
 
-    img.saveToFile("cardTest.png")
     img.show()
 
 ##############################################
@@ -1401,6 +1401,18 @@ def DumpJSON():
 
     with open('settings.json', 'w') as json_file:
         json.dump(dict, json_file)
+
+##############################################
+def TestEmoji(font):
+    fnt = ImageFont.truetype("fonts/seguiemj.ttf", size=109, layout_engine=ImageFont.LAYOUT_RAQM)
+    im = Image.new("RGBA", (600, 600), (100, 100, 100, 100))
+    draw = ImageDraw.Draw(im)
+    draw.text((0, 32), "a\u263A", fill="#faa2", embedded_color=True, font=fnt)
+    draw.text((0, 132), "a\u263A", fill="#faa8", embedded_color=True, font=fnt)
+    draw.text((0, 232), "Test 12345 asgagag", fill="#faa", embedded_color=True, font=fnt)
+    draw.text((0, 332), "\U0001F3AC\U0001F44B\U0001F3FB\U0001F44B\U0001F3FF", fill="white", embedded_color=True, font=fnt)
+    draw.text((0, 432), "a\u263A", fill="#faa2", font=fnt)
+    im.show()
 
 #################################################################       
 ############################ MAIN ###############################
