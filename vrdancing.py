@@ -300,7 +300,7 @@ class DiscordUser():
         self.row         = int(row)
         self.id          = int(id)
         self.discordID   = int(discordID)
-        self.username    = username
+        self.name        = username
         self.bootyXP     = int(bootyXP)
         self.rank        = rank
         self.dateJoined  = dateJoined
@@ -315,9 +315,9 @@ class DiscordUser():
         return prev
 
     def SetUsername(self, name: str):
-        prev = self.username
-        self.username = name
-        gSheet.DBSetUsername(self, self.username)
+        prev = self.name
+        self.name = name
+        gSheet.DBSetUsername(self, self.name)
         return prev
 
     def SetDescription(self, desc: str):
@@ -356,7 +356,7 @@ class DiscordUser():
         try:
             await gVRdancing.RemoveRole(self.discordUser, oldRank)
         except:
-            err = f"Couldn't remove role {self.rank} from user {self.username} (Does the role exist?)"
+            err = f"Couldn't remove role {self.rank} from user {self.name} (Does the role exist?)"
             gLogger.Warn(err)
             await gCtx.send(err)
 
@@ -365,7 +365,7 @@ class DiscordUser():
         try:
             await gVRdancing.AddRole(self.discordUser, self.rank)        
         except:
-            err = f"Couldn't add role {self.rank} to user {self.username} (Does the role exist?)"
+            err = f"Couldn't add role {self.rank} to user {self.name} (Does the role exist?)"
             gLogger.Warn(err)
             await gCtx.send(err)
 
@@ -646,7 +646,8 @@ class VRDancing(discord.Client):
                         missingUsers.append(user)
                         continue
                     foundUsers.append(user)
-                    await member.SetXP(member.bootyXP + XP_SWEATSESSION)
+                    await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to '{member.name}'...")
+                    await member.SetXP(member.bootyXP + XP_SWEATSESSION)                    
 
                 gLogger.Log(f"{ctx.author.name} added {XP_SWEATSESSION} booty xp to {foundUsers}")
 
@@ -774,7 +775,7 @@ class VRDancing(discord.Client):
             async def MyName(self, ctx):
                 """Get some information about yourself"""
                 member = await gSheet.GetMember(ctx.author)
-                await ctx.reply(f"Hi! Your username in the database is currently set to '{member.username}'", mention_author=True)
+                await ctx.reply(f"Hi! Your username in the database is currently set to '{member.name}'", mention_author=True)
 
             @commands.command(pass_context=True)
             async def Highscores(self, ctx):
@@ -783,12 +784,12 @@ class VRDancing(discord.Client):
 
                 longestName = 1
                 for member in highscoreList:
-                    longestName = max(longestName, len(member.username))
+                    longestName = max(longestName, len(member.name))
 
                 msg = "```"
                 for i in  range(len(highscoreList)):
                     member = highscoreList[i]
-                    adjustedName = member.username.ljust(longestName)
+                    adjustedName = member.name.ljust(longestName)
                     msg += f"{i+1}: {adjustedName} with {member.bootyXP:4} booty XP. ({member.rank})\n" 
                 
                 embed = discord.Embed()
@@ -819,7 +820,7 @@ class VRDancing(discord.Client):
                 card = await gVRdancing.GenerateDescCard(user)  
                 await ctx.send(file=card)
                 #member = await gSheet.GetMember(user)
-                #await ctx.send(f"```{member.username}:\n{member.userDesc}```", mention_author=True)
+                #await ctx.send(f"```{member.name}:\n{member.userDesc}```", mention_author=True)
 
             @WhoIs.error
             async def whois_error(self, ctx, error):
@@ -900,7 +901,7 @@ class VRDancing(discord.Client):
         rankCur  = gRanks[currentRankIndex]
         rankNext = gRanks[min(currentRankIndex + 1, len(gRanks)-1)]
 
-        username       = member.username                    
+        username       = member.name                    
         currentXP      = member.bootyXP
         currentRank    = rankCur.name
         nextRank       = rankNext.name
@@ -986,7 +987,7 @@ class VRDancing(discord.Client):
         rankCur  = gRanks[currentRankIndex]
         rankNext = gRanks[min(currentRankIndex + 1, len(gRanks)-1)]
 
-        username    = member.username
+        username    = member.name
         currentRank = rankCur.name                  
         rankColor   = rankCur.color
 
