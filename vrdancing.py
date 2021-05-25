@@ -104,7 +104,7 @@ ROLE_ADMIN      = 'Admin'
 ROLE_MODERATOR  = 'Moderator'
 ROLE_FITNESS_INSTRUCTOR = 'Fitness Instructor'
 
-ROLE_SPLIT_RANK_ROLES    = '»»      Rank Roles       ««'
+ROLE_SPLIT_OTHER_ROLES   = '»»       Other Roles       ««'
 ROLE_SPLIT_SPECIAL_ROLES = '»»      Special Roles     ««'
 
 XP_LOCK_MSG     = "XP gain is currently locked. Contact any admin to ask for unlock."
@@ -214,7 +214,7 @@ async def OnAddedToServer(user: discord.user):
     #await message.add_reaction(":fm:")
 
     # Add roles to new user
-    await gVRdancing.AddRoles(user, [RANK_FITNESS_NEWCOMER, ROLE_SPLIT_RANK_ROLES, ROLE_SPLIT_SPECIAL_ROLES])
+    await gVRdancing.AddRoles(user, [RANK_FITNESS_NEWCOMER, ROLE_SPLIT_OTHER_ROLES, ROLE_SPLIT_SPECIAL_ROLES])
 
     # Send out private DM to user
     if (not gSettings.newUserDM):
