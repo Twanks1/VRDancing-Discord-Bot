@@ -225,13 +225,13 @@ async def OnAddedToServer(user: discord.user):
 
     introductionChannel = gVRdancing.GetChannel(gSettings.ChannelIDIntroduction())
     rulesChannel = gVRdancing.GetChannel(gSettings.ChannelIDRules())
-    sweatsessionChannel = gVRdancing.GetChannel(gSettings.ChannelIDSweatSession())
+    ranksChannel = gVRdancing.GetChannel(gSettings.ChannelIDRanks())
     selfRoles = gVRdancing.GetChannel(gSettings.ChannelIDSelfRoles())
     dm = f"""Hey {user.mention}! You finally made it! Welcome to our VRDancing Discord Server.
 Please read the {introductionChannel.mention} for more information about our server.
 Also read and react to the {rulesChannel.mention} to get full access.
 Free free to give you some {selfRoles.mention}, so people know a bit about you!
-Join our weekly dance session and gain some booty ranks! Checkout {sweatsessionChannel.mention}!
+Join our weekly dance session and gain some booty ranks! Checkout {ranksChannel.mention}!
 
 Additionally, how about introducing yourself by setting a custom description?
 Reply to me with "{CMD_PREFIX}whois" to see your own customized banner!
@@ -271,6 +271,7 @@ Please post the finished playlist at least a day before the session in {sweatses
 You can also drop any questions in there. The channel is for the instructor and mods/admins only.
     
 Last but not least write a custom message to everyone in {sweatsessionChannel.mention} and @Ping-Weekly Sweat Session.
+Feel free to do this whenever you want. The sooner the better though!
 The Fitness Marshall thanks you for your services. {XP_INSTRUCTOR} Booty XP earned!"""
     
     await user.send(dm)
@@ -548,7 +549,9 @@ class VRDancing(discord.Client):
 
                 await OnFitnessInstructor(newInstructor)
 
-                await ctx.send(f"Updated {ROLE_FITNESS_INSTRUCTOR} roles. New Instructor for this week is {newInstructor.mention}")
+                await ctx.send(f"Updated {ROLE_FITNESS_INSTRUCTOR} roles. New Instructor for this week is {newInstructor.mention}. You've also gained {XP_INSTRUCTOR} booty XP!")
+                
+                gLogger.Log(f"{ctx.author.name} set a new fitness instructor: {user.name}")
             
             @commands.command(pass_context=True)
             async def DM(self, ctx, members: commands.Greedy[discord.Member], dm: str):
