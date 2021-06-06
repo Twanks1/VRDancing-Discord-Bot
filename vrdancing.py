@@ -89,6 +89,9 @@ class Settings:
     def ChannelIDSweatSession(self):
         return self.file['channels']['sweatsession']
 
+    def ChannelIDSweatSessionPrep(self):
+        return self.file['channels']['sweatsession_prep']
+
 gSettings = Settings("settings.json")
 
 ###########################
@@ -222,11 +225,13 @@ async def OnAddedToServer(user: discord.user):
 
     introductionChannel = gVRdancing.GetChannel(gSettings.ChannelIDIntroduction())
     rulesChannel = gVRdancing.GetChannel(gSettings.ChannelIDRules())
+    sweatsessionChannel = gVRdancing.GetChannel(gSettings.ChannelIDSweatSession())
     selfRoles = gVRdancing.GetChannel(gSettings.ChannelIDSelfRoles())
     dm = f"""Hey {user.mention}! You finally made it! Welcome to our VRDancing Discord Server.
 Please read the {introductionChannel.mention} for more information about our server.
 Also read and react to the {rulesChannel.mention} to get full access.
 Free free to give you some {selfRoles.mention}, so people know a bit about you!
+Join our weekly dance session and gain some booty ranks! Checkout {sweatsessionChannel.mention}!
 
 Additionally, how about introducing yourself by setting a custom description?
 Reply to me with "{CMD_PREFIX}whois" to see your own customized banner!
@@ -251,6 +256,31 @@ Please change it to your vrchat username with '{CMD_PREFIX}setmyname "MY FANCY N
     embed = discord.Embed()
     embed.description = f"[Database]({GSHEET_LINK})"
     await user.send(dm, embed=embed)
+
+async def OnFitnessInstructor(user: discord.user):
+
+    sweatsessionChannel = gVRdancing.GetChannel(gSettings.ChannelIDSweatSession())
+    sweatsessionPrepChannel = gVRdancing.GetChannel(gSettings.ChannelIDSweatSessionPrep())
+
+    dm = f"""Hey Booty!
+You have been selected to be the Fitness Instructor for our {sweatsessionChannel.mention}
+Your job is to create a playlist of songs for us. You are free to pick any song you like.
+You can even create own ones if you feel extremely dedicated! Be creative and give everyone a good time!
+The session should last about an hour long (~15 songs), but feel free to make it a little longer if you want.
+Please post the finished playlist at least a day before the session in {sweatsessionPrepChannel.mention}. 
+You can also drop any questions in there. The channel is for the instructor and mods/admins only.
+    
+Last but not least write a custom message to everyone in {sweatsessionChannel.mention} and @Ping-Weekly Sweat Session.
+The Fitness Marshall thanks you for your services. {XP_INSTRUCTOR} Booty XP earned!"""
+    
+    await user.send(dm)
+
+    # Add role
+    await gVRdancing.AddRole(user, ROLE_FITNESS_INSTRUCTOR)
+
+    # Give additional XP for being an instructor
+    member = await gSheet.GetMember(user)
+    await member.SetXP(member.bootyXP + XP_INSTRUCTOR)
 
 ###########################
 ##### DATABASE LAYOUT #####
@@ -509,20 +539,16 @@ class VRDancing(discord.Client):
             @commands.command(pass_context=True)
             async def FitnessInstructor(self, ctx, newInstructor: discord.Member):
                 """Sets a new fitness instructor for the upcoming week"""
+
+                # Remove fitness instructor role from previous instructors
                 role = get(ctx.guild.roles, name=ROLE_FITNESS_INSTRUCTOR)
                 for user in ctx.guild.members:
                     if role in user.roles:
                         await user.remove_roles(role)
 
-                # Add new role to the new instructor
-                await gVRdancing.AddRole(newInstructor, ROLE_FITNESS_INSTRUCTOR)
-                channel = gVRdancing.GetChannel(gSettings.ChannelIDSweatSession())
-                await ctx.send(f"Updated {ROLE_FITNESS_INSTRUCTOR} roles. {newInstructor.mention} You can now post in {channel.mention}. You've also gained {XP_INSTRUCTOR} Booty XP!")
+                await OnFitnessInstructor(newInstructor)
 
-                # Give additional XP for being an instructor
-                member = await gSheet.GetMember(newInstructor)
-                await member.SetXP(member.bootyXP + XP_INSTRUCTOR)
-
+                await ctx.send(f"Updated {ROLE_FITNESS_INSTRUCTOR} roles. New Instructor for this week is {newInstructor.mention}")
             
             @commands.command(pass_context=True)
             async def DM(self, ctx, members: commands.Greedy[discord.Member], dm: str):
@@ -636,8 +662,8 @@ class VRDancing(discord.Client):
                         missingUsers.append(user)
                         continue
                     foundUsers.append(user)
-                    await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to {member.discordUser.mention}...")
-                    await member.SetXP(member.bootyXP + XP_SWEATSESSION)                    
+                    await member.SetXP(member.bootyXP + XP_SWEATSESSION) 
+                    await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to {member.discordUser.mention}... (New XP: {member.bootyXP})")                  
 
                 gLogger.Log(f"{ctx.author.name} added {XP_SWEATSESSION} booty xp to {foundUsers}")
 
@@ -797,7 +823,7 @@ class VRDancing(discord.Client):
                 await ctx.reply(f"Hi! Your username in the database is currently set to '{member.name}'", mention_author=True)
 
             @commands.command(pass_context=True)
-            async def Highscores(self, ctx):
+            async def Leaderboard(self, ctx):
                 """Display's a Highscore list for the top 10 members"""
                 highscoreList = gSheet.GetTopMembers(10)
 
