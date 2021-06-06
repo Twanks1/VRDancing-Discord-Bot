@@ -229,7 +229,8 @@ Also read and react to the {rulesChannel.mention} to get full access.
 Free free to give you some {selfRoles.mention}, so people know a bit about you!
 
 Additionally, how about introducing yourself by setting a custom description?
-If you reply to me with '{CMD_PREFIX}setdesc "INTRODUCE YOURSELF"' other people can query it with the {CMD_PREFIX}whois command.
+Reply to me with "{CMD_PREFIX}whois" to see your own customized banner!
+Use '{CMD_PREFIX}setdesc "INTRODUCE YOURSELF"' to change the text.
 Put everything into double quotes and use Shift+Enter for newlines! (Max {gSettings.maxLenDesc} characters)
 Have fun and welcome again to the booty club!
     """
@@ -635,7 +636,7 @@ class VRDancing(discord.Client):
                         missingUsers.append(user)
                         continue
                     foundUsers.append(user)
-                    await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to '{member.name}'...")
+                    await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to {member.discordUser.mention}...")
                     await member.SetXP(member.bootyXP + XP_SWEATSESSION)                    
 
                 gLogger.Log(f"{ctx.author.name} added {XP_SWEATSESSION} booty xp to {foundUsers}")
