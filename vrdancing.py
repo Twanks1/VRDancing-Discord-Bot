@@ -92,6 +92,9 @@ class Settings:
     def ChannelIDSweatSessionPrep(self):
         return self.file['channels']['sweatsession_prep']
 
+    def GSheetDatabaseName(self):
+        return self.file['gsheet']['db']
+
 gSettings = Settings("settings.json")
 
 ###########################
@@ -1130,7 +1133,7 @@ class GoogleSpreadSheet:
         client = gspread.authorize(creds)
         self.spreadSheet = client.open(spreadSheetName)
         self.spreadSheetName = spreadSheetName
-        self.database = self.spreadSheet.worksheet("Database")
+        self.database = self.spreadSheet.worksheet(gSettings.GSheetDatabaseName())
 
         self.dbIndexID         = self.GetColumnIndex(DB_ID)
         self.dbIndexDiscordID  = self.GetColumnIndex(DB_DISCORD_ID)
