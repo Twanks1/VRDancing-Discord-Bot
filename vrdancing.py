@@ -467,6 +467,17 @@ class VRDancing(discord.Client):
                 if cog._get_overridden_method(cog.cog_command_error) is not None:
                     return
 
+            # Because $help doesn't work in private DM's i just construct it manually here
+            if isinstance(ctx.channel, discord.channel.DMChannel) and ctx.invoked_with == "help":
+                embed=discord.Embed(description="Help")
+                embed.add_field(name="Rank", value="Check your current rank", inline=False)
+                embed.add_field(name="WhoIs", value="Check your custom description", inline=False)
+                embed.add_field(name="SetDesc", value="Change your current description. Please put everything into quotes likes this: 'MY CUSTOM DESC'", inline=False)
+                embed.add_field(name="SetMyName", value="Change your name in the database. Please ensure this is your VRChat username", inline=False)
+                embed.add_field(name="MyName", value="Check your current name", inline=False)
+                await ctx.send(embed=embed)
+                return
+
             if isinstance(error, commands.CommandNotFound):
                 await ctx.send("**Invalid command. Try using** `help` **to figure out commands!**")
             elif isinstance(error, commands.MissingRequiredArgument):
