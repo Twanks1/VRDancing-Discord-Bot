@@ -671,6 +671,12 @@ class VRDancing(discord.Client):
                 missingUsers = []
                 foundUsers = []
 
+                marshall = Image.open("Images/fm_stretch.png").convert("RGBA")
+                arr = io.BytesIO()
+                marshall.save(arr, format='PNG')
+                arr.seek(0)
+                card = discord.File(arr, "marshall.png")
+
                 # Add XP to every user
                 users = str.split(SPLIT_CHAR)                
                 for user in users:
@@ -683,7 +689,7 @@ class VRDancing(discord.Client):
                     await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to {member.discordUser.mention}... (New XP: {member.bootyXP})")
 
                     dm = ORANGE(f"Gained {XP_SWEATSESSION} booty xp for joining our weekly sweat session! (New XP: {member.bootyXP})\nUse {CMD_PREFIX}rank to see your current rank.")
-                    await member.discordUser.send(dm)
+                    await member.discordUser.send(dm, file=card)
 
                     # Because the GSheet API seems to fail for some reason if we do it too fast im adding this artifical delay for now
                     time.sleep(0.5)        
