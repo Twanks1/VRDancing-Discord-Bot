@@ -217,7 +217,6 @@ async def OnAddedToServer(user: discord.user):
     # Post message in systems channel
     card = await gVRdancing.GenerateJoinServerCard(user)
     await gVRdancing.guild.system_channel.send(f"{user.mention}", file=card)
-    #await message.add_reaction(":fm:")
 
     # Add roles to new user
     await gVRdancing.AddRoles(user, [RANK_FITNESS_NEWCOMER, ROLE_SPLIT_OTHER_ROLES, ROLE_SPLIT_SPECIAL_ROLES])
@@ -472,8 +471,8 @@ class VRDancing(discord.Client):
                 embed=discord.Embed(description="Help")
                 embed.add_field(name="Rank", value="Check your current rank", inline=False)
                 embed.add_field(name="WhoIs", value="Check your custom description", inline=False)
-                embed.add_field(name="SetDesc", value="Change your current description. Please put everything into quotes likes this: 'MY CUSTOM DESC'", inline=False)
-                embed.add_field(name="SetMyName", value="Change your name in the database. Please ensure this is your VRChat username", inline=False)
+                embed.add_field(name="SetDesc", value="Change your current description. Please put everything into quotes like this: 'MY CUSTOM DESC'", inline=False)
+                embed.add_field(name="SetMyName", value="Change your name in the database. Please ensure this is your VRChat username. This makes it easier for us to give you booty xp after a sweatsession.", inline=False)
                 embed.add_field(name="MyName", value="Check your current name", inline=False)
                 await ctx.send(embed=embed)
                 return
@@ -1107,7 +1106,14 @@ class VRDancing(discord.Client):
         x, y = 350, 128
 
         # Username
-        fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", 80) # Unicode font which contains special characters like ღὣ
+        fontSize = 80
+        while True:        
+            fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", fontSize) # Unicode font which contains special characters like ღὣ
+            sw, sh = draw.textsize(username, fnt)
+            fontSize = fontSize - 5
+            if sw <= 550:
+                break
+
         draw.text((x, y), username, font=fnt, fill="#D0AA2F", align="right", anchor="ls")
 
         sw, sh = draw.textsize(username, fnt)
@@ -1408,7 +1414,6 @@ def TestRankCard():
 
     img.show()
 
-
 ##############################################
 def TestDescCard():
     # creating Image object
@@ -1460,6 +1465,55 @@ def TestDescCard():
     img.show()
 
 ##############################################
+def TestJoinServerCard():
+    # creating Image object
+    w, h = 1024, 256
+    img = Image.new("RGBA", (w, h), "#090A0B")
+    draw = ImageDraw.Draw(img)                    
+
+    # Avatar image
+    avatarImage = Image.open("me.png").convert("RGBA")
+    avatarImage = avatarImage.resize((256, 256))
+    img.alpha_composite(avatarImage)
+
+    username = "CamoMonkey,King of Bananas"
+    #username = "Silvan"
+    username = "CamoMonkey,King of Bananas (Long text) LOL"
+    discriminator = f"#3333"
+
+    x, y = 350, 128
+
+    # Username
+    fontSize = 80
+    while True:        
+        fnt = ImageFont.truetype("fonts/CutieShark.ttf" if username.isascii() else "fonts/code2000.ttf", fontSize) # Unicode font which contains special characters like ღὣ
+        sw, sh = draw.textsize(username, fnt)
+        fontSize = fontSize - 5
+
+        if sw <= 550:
+            break
+    
+    draw.text((x, y), username, font=fnt, fill="#D0AA2F", align="right", anchor="ls")
+
+    sw, sh = draw.textsize(username, fnt)
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 40) # Unicode font which contains special characters like ღὣ
+    draw.text((x + sw, y), discriminator, font=fnt, fill="#6C7071", anchor="ls")
+
+    # Has joined the server text
+    textY = y + 45
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 25)
+    strJoined = f"has joined the Booty Army. You are booty "
+    draw.text((x, textY), strJoined, font=fnt, fill="#2FD0AA", anchor="ls")
+
+    # Nth booty member
+    sw, sh = draw.textsize(strJoined, fnt)
+    fnt = ImageFont.truetype("fonts/CutieShark.ttf", 45)
+    strJoined = f"#6666"
+    draw.text((x + sw, textY), strJoined, font=fnt, fill="#AA2FD0", anchor="ls")
+
+    img.show()
+
+##############################################
 def DumpJSON():
     dict = {
         "channels":
@@ -1497,6 +1551,7 @@ def main():
 
     #TestRankCard()
     #TestDescCard()
+    #TestJoinServerCard()
 
     gLogger = Logger('vrdancing', LOG_LEVEL)
 
