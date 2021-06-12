@@ -58,7 +58,7 @@ class Order(Enum):
 ###########################
 class Settings:
     def __init__(self, file):
-        self.lockXP         = True   # Whether mods can use all the XP gain commands
+        self.lockXP         = False  # Whether mods can use all the XP gain commands
         self.maxXPGain      = 40     # max XP which can be added via addBootyXP command
         self.minLenUsername = 3      # min length of username
         self.maxLenUsername = 25     # max length of username
