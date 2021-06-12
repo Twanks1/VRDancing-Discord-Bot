@@ -5,6 +5,7 @@ import re
 import math
 import io
 import json
+import time
 from enum import Enum
 
 #  pip3 install gspread oauth2client
@@ -679,7 +680,13 @@ class VRDancing(discord.Client):
                         continue
                     foundUsers.append(user)
                     await member.SetXP(member.bootyXP + XP_SWEATSESSION) 
-                    await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to {member.discordUser.mention}... (New XP: {member.bootyXP})")                  
+                    await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to {member.discordUser.mention}... (New XP: {member.bootyXP})")
+
+                    dm = ORANGE(f"Gained {XP_SWEATSESSION} booty xp for joining our weekly sweat session! (New XP: {member.bootyXP})\nUse {CMD_PREFIX}rank to see your current rank.")
+                    await member.discordUser.send(dm)
+
+                    # Because the GSheet API seems to fail for some reason if we do it too fast im adding this artifical delay for now
+                    time.sleep(0.5)        
 
                 gLogger.Log(f"{ctx.author.name} added {XP_SWEATSESSION} booty xp to {foundUsers}")
 
@@ -1201,7 +1208,8 @@ class GoogleSpreadSheet:
     async def GetMemberByName(self, user: str):
         try:
             result = self.database.find(user, in_column=self.dbIndexUserName+1)
-        except:            
+        except Exception as e:   
+            gLogger.Warn(f"Failed to find user '{user}' in the database. Error: " + str(e))
             return None
 
         row = self.database.row_values(result.row)
