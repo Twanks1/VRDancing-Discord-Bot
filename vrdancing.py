@@ -58,13 +58,14 @@ class Order(Enum):
 ###########################
 class Settings:
     def __init__(self, file):
-        self.lockXP         = False  # Whether mods can use all the XP gain commands
-        self.maxXPGain      = 40     # max XP which can be added via addBootyXP command
-        self.minLenUsername = 3      # min length of username
-        self.maxLenUsername = 25     # max length of username
-        self.newUserDM      = True   # Send out new user DM
-        self.minLenDesc     = 4      # Minimum amount of characters for the user desc
-        self.maxLenDesc     = 1000   # Maximun amount of characters for the user desc
+        self.lockXP              = True   # Whether mods can use all the XP gain commands
+        self.maxXPGain           = 40     # max XP which can be added via addBootyXP command
+        self.minLenUsername      = 3      # min length of username
+        self.maxLenUsername      = 25     # max length of username
+        self.newUserDM           = True   # Send out new user DM
+        self.minLenDesc          = 4      # Minimum amount of characters for the user desc
+        self.maxLenDesc          = 1000   # Maximun amount of characters for the user desc
+        self.listenToAllMessages = True   # Whether the bot listens to all messages (mostly used for eastereggs)
 
         with open(file) as f:
             self.file = json.load(f)
@@ -453,7 +454,20 @@ class VRDancing(discord.Client):
 
         @bot.event
         async def on_member_join(user):
-            await OnAddedToServer(user)               
+            await OnAddedToServer(user)           
+
+        @bot.listen()
+        async def on_message(message):
+            if message.author.bot or not gSettings.listenToAllMessages:
+                return
+
+            if "not a cult" in message.content:
+                randomMsg = [f"Are you sure {message.author.mention}?", "Hmmm...", "I pray to the marshall every day"]
+                await message.channel.send(random.choice(randomMsg))
+
+            if "marshall" in message.content:
+                randomMsg = [f"Our lord and savior!!!", "Hmmm...", "He's amazing, isn't he? :)", "I'm in love with him!", "I would marry him if i could!"]
+                await message.channel.send(random.choice(randomMsg))
 
         @bot.event
         async def on_command_error(ctx, error):
@@ -638,6 +652,12 @@ class VRDancing(discord.Client):
                     await user.remove_roles(roles)
                 await ctx.send(RED("Roles removed"))
 
+            @commands.command(pass_context=True)
+            async def ToggleListenToAllMessages(self, ctx):
+                """Toggles listening to all messages"""
+                gSettings.listenToAllMessages = not gSettings.listenToAllMessages
+                await ctx.send(f"Listening to all messages: {gSettings.listenToAllMessages}")
+
         ####################### MOD COMMANDS ############################
         class Moderator(commands.Cog):
             """All commands usable by moderators"""
@@ -671,11 +691,11 @@ class VRDancing(discord.Client):
                 missingUsers = []
                 foundUsers = []
 
-                marshall = Image.open("Images/fm_stretch.png").convert("RGBA")
-                arr = io.BytesIO()
-                marshall.save(arr, format='PNG')
-                arr.seek(0)
-                card = discord.File(arr, "marshall.png")
+                #marshall = Image.open("images/fm_stretch.png").convert("RGBA")
+                #arr = io.BytesIO()
+                #marshall.save(arr, format='PNG')
+                #arr.seek(0)
+                #card = discord.File(arr, "marshall.png")
 
                 # Add XP to every user
                 users = str.split(SPLIT_CHAR)                
@@ -689,7 +709,7 @@ class VRDancing(discord.Client):
                     await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to {member.discordUser.mention}... (New XP: {member.bootyXP})")
 
                     dm = ORANGE(f"Gained {XP_SWEATSESSION} booty xp for joining our weekly sweat session! (New XP: {member.bootyXP})\nUse {CMD_PREFIX}rank to see your current rank.")
-                    await member.discordUser.send(dm, file=card)
+                    await member.discordUser.send(dm)
 
                     # Because the GSheet API seems to fail for some reason if we do it too fast im adding this artifical delay for now
                     time.sleep(0.5)        
