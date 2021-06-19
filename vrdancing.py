@@ -458,7 +458,7 @@ class VRDancing(discord.Client):
 
         @bot.listen()
         async def on_message(message):
-            if message.author.bot or not gSettings.listenToAllMessages:
+            if message.author.bot or not gSettings.listenToAllMessages or message.content.startswith(f"{CMD_PREFIX}"):
                 return
 
             if "not a cult" in message.content:
@@ -644,7 +644,6 @@ class VRDancing(discord.Client):
                     await user.add_roles(roles)
                 await ctx.reply(RED("Roles added"))
 
-
             @commands.command(pass_context=True)
             async def RemoveRoles(self, ctx, members: commands.Greedy[discord.Member], roles: commands.Greedy[discord.Role]):
                 """Removes roles to an arbitrary amount of users"""
@@ -682,7 +681,7 @@ class VRDancing(discord.Client):
                 await ctx.send(msg)
 
             @commands.command(pass_context=True)
-            async def SweatsessionXP(self, ctx, str: str):
+            async def SSXP(self, ctx, str: str):
                 """Adds booty experience to an arbitrary amount of users based on a given string"""
                 if (gSettings.XPLocked(ctx.author)):
                     await ctx.reply(XP_LOCK_MSG, mention_author = True)
@@ -723,6 +722,20 @@ class VRDancing(discord.Client):
                     foundUserMsg = msg+'\n' if foundUsers else ""
                     await ctx.send(f"{foundUserMsg}Couldn't find these members: {missingUsers} (Wrong name or they left the guild)")
 
+            @commands.command(pass_context=True)
+            async def SSXPSetName(self, ctx, strUser: str, user: discord.Member):
+                """Usage: Cmd 'NEW_NAME_FOR_DB' @USER"""
+                if (gSettings.XPLocked(ctx.author)):
+                    await ctx.reply(XP_LOCK_MSG, mention_author = True)
+                    return
+
+                member = await gSheet.GetMember(user)
+                member.SetUsername(strUser)
+                await member.SetXP(member.bootyXP + XP_SWEATSESSION)
+                await ctx.send(f"Adding {XP_SWEATSESSION} booty xp to {member.discordUser.mention}... (New XP: {member.bootyXP})")
+
+                dm = ORANGE(f"Gained {XP_SWEATSESSION} booty xp for joining our weekly sweat session! (New XP: {member.bootyXP})\nUse {CMD_PREFIX}rank to see your current rank.")
+                await user.send(dm)
 
             @commands.command(pass_context=True)
             async def GiveSweatsessionXP(self, ctx, members: commands.Greedy[discord.Member]):
