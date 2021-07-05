@@ -51,11 +51,11 @@ async def onRankChange(ctx, usr: str, rank: str):
 
     await SetRank(usr, rank)
 
-    await AddRole(ctx, user, rank)
-    #try:
-    #    await AddRole(ctx,rank, row['rank'])        
-    #except:
-    #    config.Glogger.Warn(f"Couldn't add role {row['rank']} to user {usr} (Does the role exist?)")
+    
+    try:
+        await AddRole(ctx, user, rank)        
+    except:
+        config.Glogger.Warn(f"Couldn't add role {row['rank']} to user {usr} (Does the role exist?)")
 
     newRank = rank
     newRankIndex = RankIndex(newRank)
