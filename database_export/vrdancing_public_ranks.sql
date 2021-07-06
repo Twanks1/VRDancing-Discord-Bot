@@ -1,6 +1,6 @@
 create table ranks
 (
-    id          integer,
+    id          serial not null,
     discordid   text,
     username    text,
     bootyxp     integer,
