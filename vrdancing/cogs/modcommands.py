@@ -7,13 +7,16 @@ class modCommands(commands.Cog):
     def __init__(self) -> None:
         return
 
+    def ORANGE(str):
+        return "```fix\n" + str + "```"
+
     async def cog_check(self, ctx):
         admin = discord.utils.get(ctx.guild.roles, name = config.ROLE_MODERATOR)
         mod = discord.utils.get(ctx.guild.roles, name = config.ROLE_ADMIN)
         return mod in ctx.author.roles or admin in ctx.author.roles
 
     @commands.command(pass_context = True)
-    async def SweatsessionXP(self, ctx, str: str):
+    async def SSXP(self, ctx, str: str):
         missingUsers = []
         foundUsers = []
 
@@ -40,3 +43,20 @@ class modCommands(commands.Cog):
     async def ResetSWSxp(self,ctx):
         await resetSWS()
         await ctx.send("Reset SWS XP variable.")
+
+    @commands.command(pass_context = True)
+    async def SSXPSetName(self, ctx,strUser:str , user: discord.Member):
+        if(config.LOCKXP):
+            await ctx.reply(config.XP_LOCK_MSG, mention_author = True)
+            return
+        member = await GetorCreateDBUser(strUser, user)
+        await config.db.execute(
+            "UPDATE ranks SET username = $1 WHERE discordid = $2",
+            strUser,
+            str(user.id)
+        )
+        await AddSWSXP(strUser, ctx)
+        row = await GetDBUser(strUser)
+        await ctx.send(f"Adding {config.XP_SWEATSESSION} booty xp to {user.mention}... (New XP: {row['bootyxp']})")
+        dm = (f"Gained {config.XP_SWEATSESSION} booty xp for joining our weekly sweat session! (New XP: {row['bootyxp']})\nUse {config.PREFIX}rank to see your current rank.")
+        await user.send(dm)

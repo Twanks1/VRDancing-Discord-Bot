@@ -15,6 +15,7 @@ async def Lerp(a, b, val):
 
 
 async def GenerateRankCard( user: discord.Member):
+        print("Rank Card Generated.")
         row = await GetDBUserByID(user.id)
         currentRankIndex = RankIndex(row['rank'])
         bMaxLevel = currentRankIndex == len(config.gRanks)-1
