@@ -40,8 +40,6 @@ async def GetDBUser(usr:str):
     )
     return row
 
-
-
 async def SetRank(usr: str, rank: str):
     row = await GetDBUser(usr)
     await config.db.execute(
@@ -50,4 +48,15 @@ async def SetRank(usr: str, rank: str):
         row["discordid"]
     )
 
-
+async def resetSWS():
+    rows = await config.db.fetch("SELECT * FROM ranks")
+    for row in rows:
+        if row['swsxp']:
+            await config.db.execute(
+                "UPDATE ranks SET swsxp = $1 WHERE discordid = $2",
+                False,
+                row["discordid"]
+            )
+            print(row)
+        else:
+            continue

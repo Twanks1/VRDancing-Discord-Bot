@@ -12,6 +12,11 @@ async def AddSWSXP(usr: str, ctx):
         row["bootyxp"]+10,
         row["discordid"]
     )
+    await config.db.execute(
+        "UPDATE ranks SET swsxp = $1 WHERE discordid = $2",
+        True,
+        row["discordid"]
+    )
     await UpdateRank(usr, ctx)
     
 async def GetXP(usr: str):

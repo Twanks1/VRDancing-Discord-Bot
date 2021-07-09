@@ -1,7 +1,7 @@
 import discord
 import config 
 from discord.ext import commands 
-from vrdancing.database.storage import GetDBUser
+from vrdancing.database.storage import *
 from vrdancing.events.rankupdate import AddSWSXP
 class modCommands(commands.Cog):
     def __init__(self) -> None:
@@ -24,6 +24,8 @@ class modCommands(commands.Cog):
                 missingUsers.append(user)
                 continue
             foundUsers.append(user)
+            if member['swsxp']:
+                continue
             await ctx.send(f"Adding {config.XP_SWEATSESSION} booty xp to {member['username']}...")
             await AddSWSXP(user, ctx)
         config.Glogger.Log(f"{ctx.author.name} added {config.XP_SWEATSESSION} booty xp to {foundUsers}")
@@ -33,3 +35,8 @@ class modCommands(commands.Cog):
         else:
             foundUserMsg = msg+'\n' if foundUsers else ""
             await ctx.send(f"{foundUserMsg}Couldn't find these members: {missingUsers} (Wrong name or they left the guild)")
+
+    @commands.command(pass_context = True)
+    async def ResetSWSxp(self,ctx):
+        await resetSWS()
+        await ctx.send("Reset SWS XP variable.")
