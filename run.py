@@ -10,7 +10,7 @@ from vrdancing.cogs.dmall import dmall
 from vrdancing.cogs.modcommands import modCommands
 from vrdancing.events.on_member_join import on_member_join
 from vrdancing.events.on_command_error import on_command_error
-
+from vrdancing.cogs.basecommands import basecommands
 
 class VRDancing(discord.Client):
     def __init__(self):
@@ -30,6 +30,7 @@ class VRDancing(discord.Client):
 
         #bot.add_cog(dmall())
         #bot.add_cog(on_command_error())
+        bot.add_cog(basecommands())
         bot.add_cog(modCommands())
         bot.add_cog(on_member_join())
         bot.add_cog(eastereggs())

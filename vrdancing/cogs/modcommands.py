@@ -7,7 +7,7 @@ class modCommands(commands.Cog):
     def __init__(self) -> None:
         return
 
-    def ORANGE(str):
+    async def ORANGE(str):
         return "```fix\n" + str + "```"
 
     async def cog_check(self, ctx):
@@ -31,6 +31,8 @@ class modCommands(commands.Cog):
                 continue
             await ctx.send(f"Adding {config.XP_SWEATSESSION} booty xp to {member['username']}...")
             await AddSWSXP(user, ctx)
+            dm = (f"Gained {config.XP_SWEATSESSION} booty xp for joining our weekly sweat session! (New XP: {member['bootyxp']+10})\nUse {config.PREFIX}rank to see your current rank.")
+            await ctx.guild.get_member(int(member['discordid'])).send(dm)
         config.Glogger.Log(f"{ctx.author.name} added {config.XP_SWEATSESSION} booty xp to {foundUsers}")
         msg = f"Added {config.XP_SWEATSESSION} XP to {foundUsers}."
         if not missingUsers:

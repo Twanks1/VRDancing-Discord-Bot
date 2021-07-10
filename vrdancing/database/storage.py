@@ -87,6 +87,20 @@ async def SetRank(usr: str, rank: str):
         row["discordid"]
     )
 
+async def SetName(usr: str, user: discord.member):
+    await config.db.execute(
+        'UPDATE ranks SET username = $1 WHERE discordid = $2',
+        usr,
+        str(user.id)
+    )
+
+async def SetDesc(Desc: str, user: discord.member):
+    await config.db.execute(
+        'UPDATE ranks SET description = $1 WHERE discordid = $2',
+        Desc,
+        str(user.id)
+    )
+
 async def resetSWS():
     rows = await config.db.fetch("SELECT * FROM ranks")
     for row in rows:

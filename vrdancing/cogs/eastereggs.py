@@ -69,14 +69,3 @@ class eastereggs(commands.Cog):
         await ctx.send(
             "https://cdn.discordapp.com/attachments/793977209642811393/831637815488938014/thing1.gif"
         )
-
-    @commands.command(pass_context=True)
-    async def test(self, ctx: discord.ext.commands.Context) -> None:
-        print(await GetDBUser("~Silentt~"))
-    
-        await ctx.send("test")
-
-    @commands.command(pass_context=True)
-    async def add2db(self, ctx: discord.ext.commands.Context) -> None: 
-        await DBCreateNewMember(ctx.author)
-        print("test")
