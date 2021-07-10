@@ -2,9 +2,9 @@ import config
 import discord
 from discord.utils import get
 
-async def AddRoles( user: discord.Member, roles):
+async def AddRoles(user: discord.Member, roles):
     for role in roles:
-        await AddRole(user, role)
+        await AddRole(user,user, role)
 
 
 async def AddRole(ctx, user: discord.Member, roleNameOrId):
