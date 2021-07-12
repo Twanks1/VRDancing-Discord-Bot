@@ -3,6 +3,7 @@ import config
 from discord.ext import commands 
 from vrdancing.database.storage import *
 from vrdancing.events.rankupdate import AddSWSXP
+from vrdancing.events.rankupdate import UpdateRank
 class modCommands(commands.Cog):
     def __init__(self) -> None:
         return
@@ -14,6 +15,15 @@ class modCommands(commands.Cog):
         admin = discord.utils.get(ctx.guild.roles, name = config.ROLE_MODERATOR)
         mod = discord.utils.get(ctx.guild.roles, name = config.ROLE_ADMIN)
         return mod in ctx.author.roles or admin in ctx.author.roles
+
+    @staticmethod
+    def GetNamesOfMembersAsList(members):
+        if not members:
+            return ""
+        names = "["+members[0].name
+        for user in members[1:]:
+            names += ", " + user.name
+        return names + "]"
 
     @commands.command(pass_context = True)
     async def SSXP(self, ctx, str: str):
@@ -62,3 +72,71 @@ class modCommands(commands.Cog):
         await ctx.send(f"Adding {config.XP_SWEATSESSION} booty xp to {user.mention}... (New XP: {row['bootyxp']})")
         dm = (f"Gained {config.XP_SWEATSESSION} booty xp for joining our weekly sweat session! (New XP: {row['bootyxp']})\nUse {config.PREFIX}rank to see your current rank.")
         await user.send(dm)
+
+
+    @commands.command(pass_context=True)
+    async def DBAddBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
+        """@Users VALUE"""
+        #if (gSettings.XPLocked(ctx.author)):
+        #   await ctx.reply(XP_LOCK_MSG, mention_author = True)
+        #    return
+
+        if (value <= 0 or value > config.MAXXPGAIN):
+            await ctx.reply(f"Value must lie within 1 - {config.MAXXPGAIN}!", mention_author=True)
+            return
+        config.Glogger.Log(f"{ctx.author.name} added {value} booty xp to {self.GetNamesOfMembersAsList(members)}")
+        msg = ""
+        for user in members:
+            member = await GetDBUserByID(str(user.id))
+            newXP = member['bootyxp'] + value
+            await config.db.execute(
+                "UPDATE ranks SET bootyxp = $1 WHERE discordid = $2",
+                newXP,
+                member["discordid"]
+            )
+            await UpdateRank(member["username"],ctx)
+            msg += f"Added {value} booty points to {user.mention}. New XP: {newXP}\n"
+
+        await ctx.send(msg)
+
+    @commands.command(pass_context=True)
+    async def GiveVideoXP(self, ctx, members: commands.Greedy[discord.Member]):
+        """Adds booty experience worth of a basic dance video. Usage: cmd @user"""
+        #if (gSettings.XPLocked(ctx.author)):
+        #    await ctx.reply(XP_LOCK_MSG, mention_author = True)
+        #    return
+        config.Glogger.Log(f"{ctx.author.name} added basic video xp to {self.GetNamesOfMembersAsList(members)}")
+        msg = ""
+        for user in members:
+            member = await GetDBUserByID(str(user.id))
+            newXP = member['bootyxp'] + config.XP_BASIC_VIDEO
+            await config.db.execute(
+                "UPDATE ranks SET bootyxp = $1 WHERE discordid = $2",
+                newXP,
+                member["discordid"]
+            )
+            await UpdateRank(member["username"],ctx)
+            msg += f"Added {config.XP_BASIC_VIDEO} booty points to {user.mention}. New XP: {newXP}\n"
+
+        await ctx.send(msg)
+
+    @commands.command(pass_context=True)
+    async def GiveYoutubeVideoXP(self, ctx, members: commands.Greedy[discord.Member]):
+        """Adds booty experience worth of a YouTube video for VRDancing. Usage: cmd @user"""
+        #if (gSettings.XPLocked(ctx.author)):
+        #    await ctx.reply(XP_LOCK_MSG, mention_author = True)
+        #    return
+        config.Glogger.Log(f"{ctx.author.name} added YT video xp to {self.GetNamesOfMembersAsList(members)}")
+        msg = ""
+        for user in members:
+            member = await GetDBUserByID(str(user.id))
+            newXP = member['bootyxp'] + config.XP_YT_VIDEO
+            await config.db.execute(
+                "UPDATE ranks SET bootyxp = $1 WHERE discordid = $2",
+                newXP,
+                member["discordid"]
+            )
+            await UpdateRank(member["username"],ctx)
+            msg += f"Added {config.XP_YT_VIDEO} booty points to {user.mention}. New XP: {newXP}\n"
+
+        await ctx.send(msg)

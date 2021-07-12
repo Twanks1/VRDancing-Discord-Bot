@@ -2,8 +2,7 @@ import discord
 import config
 
 from discord.ext import commands
-
-from vrdancing.utils.discord.channel_utils import GetChannel
+import VRDancing
 from vrdancing.utils.discord.role_utils import AddRoles
 from vrdancing.database.storage import DBCreateNewMember
 
@@ -28,10 +27,10 @@ class on_member_join(commands.Cog):
         if not config.NEWUSERDM:
             return
 
-        introductionChannel = GetChannel(member, config.INTRODUCTION)
-        rulesChannel = GetChannel(member, config.RULES)
-        ranksChannel = GetChannel(member, config.RANKS)
-        selfRoles = GetChannel(member, config.SELF_ROLES)
+        introductionChannel = member.guild.get_channel(config.INTRODUCTION)
+        rulesChannel = member.guild.get_channel(config.RULES)
+        ranksChannel = member.guild.get_channel(config.RANKS)
+        selfRoles = member.guild.get_channel(config.SELF_ROLES)
         dm = f"""Hey {member.mention}! You finally made it! Welcome to our VRDancing Discord Server.
 Please read the {introductionChannel.mention} for more information about our server.
 Also read and react to the {rulesChannel.mention} to get full access.

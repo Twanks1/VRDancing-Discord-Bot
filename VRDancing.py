@@ -5,14 +5,16 @@ from discord.ext import commands
 
 import asyncpg as db
 
-from vrdancing.cogs.eastereggs import eastereggs
-from vrdancing.cogs.dmall import dmall
-from vrdancing.cogs.modcommands import modCommands
-from vrdancing.events.on_member_join import on_member_join
-from vrdancing.events.on_command_error import on_command_error
-from vrdancing.cogs.basecommands import basecommands
-
+from vrdancing.cogs.eastereggs import *
+from vrdancing.cogs.dmall import *
+from vrdancing.cogs.modcommands import *
+from vrdancing.events.on_member_join import *
+from vrdancing.events.on_command_error import *
+from vrdancing.cogs.basecommands import *
+from vrdancing.cogs.admincommands import *
 class VRDancing(discord.Client):
+    
+
     def __init__(self):
         intents = discord.Intents.default()
         intents.members = True
@@ -22,6 +24,8 @@ class VRDancing(discord.Client):
         )
         self.bot = bot
 
+        def GetChannel(self, id):
+            return self.guild.get_channel(id)
         @bot.event
         async def on_ready():
             config.Glogger.Log("Logged in as {0.user}".format(bot))
@@ -30,12 +34,14 @@ class VRDancing(discord.Client):
 
         #bot.add_cog(dmall())
         #bot.add_cog(on_command_error())
+        bot.add_cog(adminCommands())
         bot.add_cog(basecommands())
         bot.add_cog(modCommands())
         bot.add_cog(on_member_join())
         bot.add_cog(eastereggs())
         bot.run(config.TOKEN)
 
+    
 
 if __name__ == "__main__":
     VRDancing()

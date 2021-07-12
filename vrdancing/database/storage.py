@@ -101,6 +101,20 @@ async def SetDesc(Desc: str, user: discord.member):
         str(user.id)
     )
 
+async def SetCountry(Desc: str, user: discord.member):
+    await config.db.execute(
+        'UPDATE ranks SET country = $1 WHERE discordid = $2',
+        Desc,
+        str(user.id)
+    )
+
+async def SetBDay(Desc: str, user: discord.member):
+    await config.db.execute(
+        'UPDATE ranks SET birthday = $1 WHERE discordid = $2',
+        Desc, 
+        str(user.id)
+    )
+    
 async def resetSWS():
     rows = await config.db.fetch("SELECT * FROM ranks")
     for row in rows:
