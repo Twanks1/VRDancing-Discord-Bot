@@ -1,7 +1,13 @@
 import discord
+import config
+import io
 from PIL import Image, ImageDraw, ImageFont
 from vrdancing.utils.image_utils import ImageText
-async def GenerateJoinServerCard(self, user: discord.Member):
+from vrdancing.database.storage import GetDBUserByID
+from vrdancing.utils.check_rank import RankIndex
+from vrdancing.events import rankupdate
+
+async def GenerateJoinServerCard(user: discord.Member):
         # creating Image object
         w, h = 1024, 256
         img = Image.new("RGBA", (w, h), "#090A0B")
@@ -36,7 +42,7 @@ async def GenerateJoinServerCard(self, user: discord.Member):
         # Nth booty member
         sw, sh = draw.textsize(strJoined, fnt)
         fnt = ImageFont.truetype("fonts/CutieShark.ttf", 45)
-        strJoined = f"#{len(gVRdancing.guild.members)}"
+        strJoined = f"#{len(user.guild.members)}"
         draw.text((x + sw, textY), strJoined, font=fnt, fill="#AA2FD0", anchor="ls")
 
         arr = io.BytesIO()

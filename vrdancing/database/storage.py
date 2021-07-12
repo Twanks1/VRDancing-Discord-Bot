@@ -2,7 +2,7 @@ import config
 import discord
 import datetime
 from vrdancing.utils.discord.role_utils import RemoveRole, AddRole
-
+from vrdancing.events.on_database_add import OnAddedToDatabase
 async def DBCreateNewMember(user: discord.user):
     name = f"{user.name}#{user.discriminator}"
     # if self.HasMember(user) or self.HasUsername(name):
@@ -26,6 +26,7 @@ async def DBCreateNewMember(user: discord.user):
         "",
         False,
     )
+    await OnAddedToDatabase(user)
 
 async def DBCreateNewMemberWUsername(user: discord.user, username: str):
     name = f"{user.name}#{user.discriminator}"
@@ -50,6 +51,7 @@ async def DBCreateNewMemberWUsername(user: discord.user, username: str):
         "",
         False,
     )
+    await OnAddedToDatabase(user)
 
 async def GetDBUserByID(usr:str):
     row = await config.db.fetchrow(

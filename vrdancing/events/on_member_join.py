@@ -4,8 +4,8 @@ import config
 from discord.ext import commands
 import VRDancing
 from vrdancing.utils.discord.role_utils import AddRoles
-from vrdancing.database.storage import DBCreateNewMember
-
+from vrdancing.database.storage import *
+from vrdancing.cards.JoinServerCard import *
 class on_member_join(commands.Cog):
     def __init__(self) -> None:
         return
@@ -44,3 +44,7 @@ Put everything into double quotes and use Shift+Enter for newlines! (Max {config
 Have fun and welcome again to the booty club!
     """
         await member.send(dm)
+
+        card = await GenerateJoinServerCard(member)
+        channel = member.guild.get_channel(780526018418966541)
+        await channel.send(member.mention, file=card)
