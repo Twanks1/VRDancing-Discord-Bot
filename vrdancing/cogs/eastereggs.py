@@ -69,3 +69,7 @@ class eastereggs(commands.Cog):
         await ctx.send(
             "https://cdn.discordapp.com/attachments/793977209642811393/831637815488938014/thing1.gif"
         )
+    @commands.command(pass_context=True, hidden=True)
+    async def Evelyno(self, ctx: discord.ext.commands.Context) -> None:
+        """EASTER EGG"""
+        await ctx.send("https://media.discordapp.net/attachments/793977209642811393/864607188138852383/DabBattle.gif")
