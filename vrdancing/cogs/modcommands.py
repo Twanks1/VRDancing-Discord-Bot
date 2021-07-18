@@ -1,4 +1,5 @@
 import discord
+import time
 import config 
 from discord.ext import commands 
 from vrdancing.database.storage import *
@@ -43,6 +44,7 @@ class modCommands(commands.Cog):
             await AddSWSXP(user, ctx)
             dm = (f"Gained {config.XP_SWEATSESSION} booty xp for joining our weekly sweat session! (New XP: {member['bootyxp']+10})\nUse {config.PREFIX}rank to see your current rank.")
             await ctx.guild.get_member(int(member['discordid'])).send(dm)
+            time.sleep(2)
         config.Glogger.Log(f"{ctx.author.name} added {config.XP_SWEATSESSION} booty xp to {foundUsers}")
         msg = f"Added {config.XP_SWEATSESSION} XP to {foundUsers}."
         if not missingUsers:

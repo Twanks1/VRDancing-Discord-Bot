@@ -1,5 +1,5 @@
 import config
-
+import sentry_sdk
 import discord
 from discord.ext import commands
 
@@ -24,6 +24,13 @@ class VRDancing(discord.Client):
         )
         self.bot = bot
 
+        if not config.SENTRY_DSN == "":
+            sentry_sdk.init(
+                config.SENTRY_DSN,
+                traces_sample_rate=1.0
+            )
+            config.Glogger.Log("Sentry initialized")
+            
         def GetChannel(self, id):
             return self.guild.get_channel(id)
         @bot.event
