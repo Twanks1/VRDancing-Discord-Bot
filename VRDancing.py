@@ -40,7 +40,7 @@ class VRDancing(discord.Client):
             # Go ahead and restart the bot try now
 
         #bot.add_cog(dmall())
-        #bot.add_cog(on_command_error())
+        bot.add_cog(on_command_error())
         bot.add_cog(adminCommands())
         bot.add_cog(basecommands())
         bot.add_cog(modCommands())

@@ -1,11 +1,13 @@
 import discord
 from discord.ext import commands
+import sentry_sdk
+import config
 class on_command_error(commands.Cog):
     def __init__(self) -> None:
         return
 
     @commands.Cog.listener()
-    async def on_command_error(ctx, error):
+    async def on_command_error(self, ctx, error):
         # This prevents any commands with local handlers being handled here in on_command_error.
         if hasattr(ctx.command, 'on_error'):
             return
@@ -32,9 +34,15 @@ class on_command_error(commands.Cog):
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send('**Please pass in all requirements.**')
         elif isinstance(error, commands.MissingPermissions):
+            if not config.SENTRY_DSN == "":
+                sentry_sdk.capture_exception(error)
             await ctx.send("**You dont have all the requirements or permissions for using this command.**")
         elif isinstance(error, commands.ArgumentParsingError):
+            if not config.SENTRY_DSN == "":
+                sentry_sdk.capture_exception(error)
             await ctx.send("**Failed to parse the given arguments.**")
         else:
+            if not config.SENTRY_DSN == "":
+                sentry_sdk.capture_exception(error)
             await ctx.send("**An unknown error has occured while processing the command. Try using** `help` **to figure out commands!**")
 
