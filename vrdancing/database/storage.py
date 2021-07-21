@@ -62,12 +62,12 @@ async def GetDBUserByID(usr:str):
 #async def GetDBUser(self, user: discord.user):
 async def GetorCreateDBUser(usr:str, member: discord.user):
     row = await config.db.fetchrow(
-        'SELECT * FROM ranks WHERE username = $1', usr
+        'SELECT * FROM ranks WHERE discordid = $1', usr
     )
     if not row:
-        await DBCreateNewMemberWUsername(member,usr)
+        await DBCreateNewMemberWUsername(member,member.name)
         return await config.db.fetchrow(
-            'SELECT * FROM ranks WHERE username = $1', usr
+            'SELECT * FROM ranks WHERE discordid = $1', usr
         )
     else:
         return row

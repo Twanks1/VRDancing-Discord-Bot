@@ -31,7 +31,8 @@ class adminCommands(commands.Cog):
         config.Glogger.Log(f"{ctx.author.name} changed booty points to {value} for {self.GetNamesOfMembersAsList(members)}")
         msg = ""
         for user in members:
-            member = await GetDBUserByID(str(user.id))
+            #member = await GetDBUserByID(str(user.id))
+            member = await GetorCreateDBUser(str(user.id), user)
             prev = member['bootyxp']
             await config.db.execute(
                 "UPDATE ranks SET bootyxp = $1 WHERE discordid = $2",
