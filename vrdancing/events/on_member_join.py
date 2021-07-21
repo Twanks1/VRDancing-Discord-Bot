@@ -6,6 +6,8 @@ import VRDancing
 from vrdancing.utils.discord.role_utils import AddRoles
 from vrdancing.database.storage import *
 from vrdancing.cards.JoinServerCard import *
+
+
 class on_member_join(commands.Cog):
     def __init__(self) -> None:
         return

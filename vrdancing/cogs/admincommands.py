@@ -1,11 +1,12 @@
 import discord
-import config 
-from discord.ext import commands 
-from discord.utils import get 
+import config
+from discord.ext import commands
+from discord.utils import get
 import VRDancing
 from vrdancing.database.storage import *
 from vrdancing.events.rankupdate import AddSWSXP
 from vrdancing.events.rankupdate import UpdateRank
+
 
 class adminCommands(commands.Cog):
     def __init__(self) -> None:
@@ -19,34 +20,43 @@ class adminCommands(commands.Cog):
     def GetNamesOfMembersAsList(members):
         if not members:
             return ""
-        names = "["+members[0].name
+        names = "[" + members[0].name
         for user in members[1:]:
             names += ", " + user.name
         return names + "]"
 
-
     @commands.command(pass_context=True)
-    async def DBSetBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
+    async def DBSetBootyXP(
+        self, ctx, members: commands.Greedy[discord.Member], value: int
+    ):
         """Sets booty experience for users. Usage: cmd @userN value"""
-        config.Glogger.Log(f"{ctx.author.name} changed booty points to {value} for {self.GetNamesOfMembersAsList(members)}")
+        config.Glogger.Log(
+            f"{ctx.author.name} changed booty points to {value} for {self.GetNamesOfMembersAsList(members)}"
+        )
         msg = ""
         for user in members:
-            #member = await GetDBUserByID(str(user.id))
+            # member = await GetDBUserByID(str(user.id))
             member = await GetorCreateDBUser(str(user.id), user)
-            prev = member['bootyxp']
+            prev = member["bootyxp"]
             await config.db.execute(
                 "UPDATE ranks SET bootyxp = $1 WHERE discordid = $2",
                 value,
-                member["discordid"]
+                member["discordid"],
             )
-            await UpdateRank(member["username"],ctx)
-            msg += f"Changed Booty XP for {user.mention}. New XP: {value} (Prev: {prev})\n"   
-        await ctx.send(msg)   
+            await UpdateRank(member["username"], ctx)
+            msg += (
+                f"Changed Booty XP for {user.mention}. New XP: {value} (Prev: {prev})\n"
+            )
+        await ctx.send(msg)
 
     @commands.command(pass_context=True)
-    async def DBSubBootyXP(self, ctx, members: commands.Greedy[discord.Member], value: int):
+    async def DBSubBootyXP(
+        self, ctx, members: commands.Greedy[discord.Member], value: int
+    ):
         """Removes booty experience. Usage: cmd @userN value"""
-        config.Glogger.Log(f"{ctx.author.name} subtracted {value} booty points for {self.GetNamesOfMembersAsList(members)}")
+        config.Glogger.Log(
+            f"{ctx.author.name} subtracted {value} booty points for {self.GetNamesOfMembersAsList(members)}"
+        )
         msg = ""
         for user in members:
             member = await GetDBUserByID(str(user.id))
@@ -54,21 +64,22 @@ class adminCommands(commands.Cog):
             await config.db.execute(
                 "UPDATE ranks SET bootyxp = $1 WHERE discordid = $2",
                 newXP,
-                member["discordid"]
+                member["discordid"],
             )
-            await UpdateRank(member["username"],ctx)
-            msg += f"Subtracted {value} booty points from {user.name}. New XP: {newXP}\n"
+            await UpdateRank(member["username"], ctx)
+            msg += (
+                f"Subtracted {value} booty points from {user.name}. New XP: {newXP}\n"
+            )
         await ctx.send(msg)
 
     @commands.command(pass_context=True)
     async def DBDeleteUser(self, ctx, members: commands.Greedy[discord.Member]):
         """Deletes users from the DB. Usage: cmd @userN"""
-        config.Glogger.Log(f"{ctx.author.name} deletes users {self.GetNamesOfMembersAsList(members)} in db")
+        config.Glogger.Log(
+            f"{ctx.author.name} deletes users {self.GetNamesOfMembersAsList(members)} in db"
+        )
         for user in members:
-            config.db.execute(
-                "DELETE FROM ranks WHERE discordid = $1",
-                str(user.id)
-            )
+            config.db.execute("DELETE FROM ranks WHERE discordid = $1", str(user.id))
             await ctx.send(f"Deleted {user.mention} successfully from DB")
 
     @commands.command(pass_context=True)
@@ -103,11 +114,13 @@ class adminCommands(commands.Cog):
         member = await GetDBUserByID(str(user.id))
         newXP = int(member["bootyxp"]) + int(config.XP_INSTRUCTOR)
         await config.db.execute(
-            "UPDATE ranks SET bootyxp = $1 WHERE discordid = $2",
-            newXP,
-            str(user.id)
+            "UPDATE ranks SET bootyxp = $1 WHERE discordid = $2", newXP, str(user.id)
         )
 
-        await ctx.send(f"Updated {config.ROLE_FITNESS_INSTRUCTOR} roles. New Instructor for this week is {user.mention}. You've also gained {config.XP_INSTRUCTOR} booty XP!")
-                
-        config.Glogger.Log(f"{ctx.author.name} set a new fitness instructor: {user.name}")
+        await ctx.send(
+            f"Updated {config.ROLE_FITNESS_INSTRUCTOR} roles. New Instructor for this week is {user.mention}. You've also gained {config.XP_INSTRUCTOR} booty XP!"
+        )
+
+        config.Glogger.Log(
+            f"{ctx.author.name} set a new fitness instructor: {user.name}"
+        )
