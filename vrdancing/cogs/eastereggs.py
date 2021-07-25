@@ -80,6 +80,7 @@ class eastereggs(commands.Cog):
 
     @commands.command(pass_context=True, hidden=True)
     async def mix(self, ctx: discord.ext.commands.Context) -> None:
+        await ctx.send("Wholesome most of the time:tm:")
         await ctx.send(
             "https://media.discordapp.net/attachments/780912269495894047/865925196815794216/mixie_butt_slap.gif"
         )
