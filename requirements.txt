@@ -2,4 +2,4 @@ discord.py
 pillow
 asyncpg
 sentry-sdk
-pip install git+https://gitlab.com/elixire/violet@master
+git+https://gitlab.com/elixire/violet@master
