@@ -84,3 +84,9 @@ class eastereggs(commands.Cog):
         await ctx.send(
             "https://media.discordapp.net/attachments/780912269495894047/865925196815794216/mixie_butt_slap.gif"
         )
+
+    @commands.command(pass_context=True, hidden=True)
+    async def dranenk(self, ctx: discord.ext.commands.Context) -> None:
+        await ctx.send(
+            "https://cdn.discordapp.com/attachments/845515369389097020/869522856281767996/HighKickGoneWrong.gif"
+        )
