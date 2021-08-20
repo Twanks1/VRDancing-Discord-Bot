@@ -1,0 +1,21 @@
+-Welcome Cards
+-Full Card system
+-Database entries
+-On Fitness Instructor
+-admin commands
+-UserCommands
+-alternative help for dms
+-Moderator Commands
+-add role
+-remove role
+-Generate rank card
+-Generate Desc Card
+-Generate join server card
+-Tests for rank Card and the other cards
+-Logger
+-High Score list
+-Birthday and country for the database
+-Custom welcome?
+-After sws dm card.
+-SubSesh mechanism
+-Stop getting xp mechanism.

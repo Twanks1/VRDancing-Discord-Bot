@@ -1,0 +1,5 @@
+discord.py
+pillow
+asyncpg
+sentry-sdk
+git+https://gitlab.com/elixire/violet@master
